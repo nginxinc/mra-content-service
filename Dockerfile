@@ -65,7 +65,7 @@ COPY nginx /etc/nginx/
 # Install and run NGINX config generator
 RUN wget -q https://s3-us-west-1.amazonaws.com/fabric-model/config-generator/generate_config
 RUN chmod +x generate_config && \
-   ./generate_config -p /etc/nginx/fabric_config.yaml > /etc/nginx/nginx-fabric.conf
+    ./generate_config -p /etc/nginx/fabric_config.yaml -t /etc/nginx/nginx-fabric.conf.j2 > /etc/nginx/nginx-fabric.conf
 
 CMD ["./start.sh"]
 

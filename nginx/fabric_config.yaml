@@ -3,3 +3,8 @@ resolver:
   host: 198.51.100.1 198.51.100.2 198.51.100.3
   ttl: 3s
 root: /
+services:
+  album-manager:
+      server: marathon.mesos service=_album-manager._tcp
+      expose_external: true
+      healthcheck: true
