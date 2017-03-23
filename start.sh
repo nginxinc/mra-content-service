@@ -12,7 +12,7 @@ then
     echo fabric configuration set;
 fi
 
-$APP
+$APP &
 
 nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;"
 
