@@ -35,8 +35,6 @@ RUN wget -q -O /etc/ssl/nginx/CA.crt https://cs.nginx.com/static/files/CA.crt &&
 
 # Install NGINX Plus
 RUN apt-get update && apt-get install -y nginx-plus
-#COPY nginx-plus_1.11.8-0-trusty_amd64.deb /
-#RUN dpkg -i /nginx-plus_1.11.8-0-trusty_amd64.deb
 
 RUN chown -R nginx /var/log/nginx/
 
