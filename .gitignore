@@ -25,3 +25,19 @@ nginx-plus_1.11.8-0-trusty_amd64.deb
 
 ngra-content-service.iml
 .idea
+
+rethinkdb_data/metadata
+
+rethinkdb_data/log_file
+
+rethinkdb_data/1f04a91a-9642-4a6b-af31-e6ee512ad675
+
+ngra-content-service
+
+error
+
+tests/rethinkdb_data/155aafb5-c9c8-48b8-90e1-a074faa6909c
+
+tests/rethinkdb_data/log_file
+
+tests/rethinkdb_data/metadata

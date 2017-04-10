@@ -39,12 +39,12 @@ var routes = Routes {
 	Route {
 		"ReplaceArticle",
 		"PUT",
-		"/v1/content/{aticleId}",
+		"/v1/content/{articleId}",
 		ReplaceArticle,
 	},
 	Route {
 		"UpdateArticle",
-		"PUT",
+		"PATCH",
 		"/v1/content/{articleId}/{element}/{newValue}",
 		UpdateArticle,
 	},
