@@ -1,10 +1,6 @@
 package main
 
 import (
-	//"log"
-	//"net/http"
-	//"fmt"
-
 	db "gopkg.in/gorethink/gorethink.v3"
 	"net/http"
 	"log"
@@ -13,6 +9,7 @@ import (
 )
 
 func main() {
+	os.Setenv("RETHINKDB_URL", "localhost:28015")
 	var session *db.Session
 	var err error
 
