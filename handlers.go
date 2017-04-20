@@ -25,7 +25,6 @@ type Post struct {
 	Title  string       `gorethink:"title,omitempty" json:"title"`
 	Extract  string       `gorethink:"extract,omitempty" json:"extract"`
 	Body  string       `gorethink:"body,omitempty" json:"body"`
-	Photos []Photo `gorethink:"photos,omitempty" json:"photos"`
 }
 
 func Welcome(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +83,7 @@ func Article(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err.Error())
 	}
 
-	resp, err := db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photos", "title", "body").Run(session)
+	resp, err := db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(session)
 	if err != nil {
 		fmt.Print(err)
 		return
