@@ -121,7 +121,7 @@ func NewArticle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-
+	newPost.Date = time.Now()
 	resp, err := db.DB("content").Table("posts").Insert(newPost).RunWrite(session)
 	if err != nil {
 		fmt.Print(err)
@@ -154,6 +154,7 @@ func ReplaceArticle(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err.Error())
 	}
 
+	newPost.Date = time.Now()
 	resp, err := db.DB("content").Table("posts").Get(articleId).Replace(newPost).RunWrite(session)
 	if err != nil {
 		fmt.Print(err)
