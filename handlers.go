@@ -161,7 +161,7 @@ func ReplaceArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	printObj(resp)
+	printObj(w, resp)
 }
 
 func UpdateArticle(w http.ResponseWriter, r *http.Request) {
@@ -194,7 +194,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	printObj(resp)
+	printObj(w, resp)
 }
 
 func DeleteArticle(w http.ResponseWriter, r *http.Request) {
@@ -220,10 +220,10 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 
 	defer resp.Close()
 
-	fmt.Print("1 deleted article")
+	printObj(w, resp)
 }
 
-func printObj(v interface{}) {
+func printObj(w http.ResponseWriter, v interface{}) {
 	vBytes, _ := json.Marshal(v)
-	fmt.Println(string(vBytes))
+	fmt.Fprint(w, string(vBytes))
 }
