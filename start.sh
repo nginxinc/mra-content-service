@@ -1,6 +1,6 @@
 #!/bin/sh
 NGINX_PID="/var/run/nginx.pid"    # /   (root directory)
-APP="go run *.go"
+APP="go run error.go handlers.go logger.go main.go router.go routes.go"
 
 NGINX_CONF="/etc/nginx/nginx.conf";
 NGINX_FABRIC="/etc/nginx/nginx-fabric.conf";
