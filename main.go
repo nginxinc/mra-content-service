@@ -2,6 +2,7 @@ package main
 
 import (
 	db "gopkg.in/gorethink/gorethink.v3"
+	"github.com/joho/godotenv"
 	"net/http"
 	"log"
 	"os"
@@ -9,9 +10,12 @@ import (
 )
 
 func main() {
-	os.Setenv("RETHINKDB_URL", "content-db.marathon.mesos:28015")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	var session *db.Session
-	var err error
 
 	session, err = db.Connect(db.ConnectOpts{
 		Address: os.Getenv("RETHINKDB_URL"),
