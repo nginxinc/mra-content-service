@@ -33,7 +33,7 @@ func main() {
 
 	response, err := db.DB("content").TableCreate("posts").RunWrite(session)
 	if err != nil {
-		log.Print("Error creating table: %s", err)
+		log.Print("Error creating table: " + err.Error())
 	}
 
 	fmt.Printf("%d table created", response.TablesCreated)

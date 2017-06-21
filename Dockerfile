@@ -46,18 +46,6 @@ RUN curl -sS -L -O  https://github.com/nginxinc/nginx-amplify-agent/raw/master/p
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
     ln -sf /dev/stderr /var/log/nginx/error.log
 
-# install application
-# TODO
-#COPY src/ /go/
-
-#RUN ln -sf /dev/stdout /ingenious-pages/app/logs/prod.log && \
-#    chown -R nginx:www-data /ingenious-pages/ && \
-#    chmod -R 775 /ingenious-pages
-
-#RUN cd /ingenious-pages && php composer.phar install --no-dev --optimize-autoloader
-
-#COPY php5-fpm.conf /etc/php5/fpm/php-fpm.conf
-#COPY php.ini /usr/local/etc/php/
 COPY nginx /etc/nginx/
 
 # Install and run NGINX config generator
