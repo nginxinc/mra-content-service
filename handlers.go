@@ -11,6 +11,13 @@ import (
 	"os"
 )
 
+//
+//  handlers.go
+//  ContentService
+//
+//  Copyright © 2017 NGINX Inc. All rights reserved.
+//
+
 type Photo struct {
 	Name    string `gorethink:"name"`
 	Url   string `gorethink:"url"`

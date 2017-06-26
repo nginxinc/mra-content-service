@@ -6,6 +6,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//
+//  router.go
+//  ContentService
+//
+//  Copyright © 2017 NGINX Inc. All rights reserved.
+//
+
 func NewRouter() *mux.Router {
 
 	router := mux.NewRouter().StrictSlash(true)
