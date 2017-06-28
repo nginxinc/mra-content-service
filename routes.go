@@ -2,6 +2,13 @@ package main
 
 import "net/http"
 
+//
+//  routes.go
+//  ContentService
+//
+//  Copyright © 2017 NGINX Inc. All rights reserved.
+//
+
 type Route struct {
 	Name        string
 	Method      string

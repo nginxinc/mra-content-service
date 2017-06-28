@@ -9,6 +9,13 @@ import (
 	"fmt"
 )
 
+//
+//  main.go
+//  ContentService
+//
+//  Copyright © 2017 NGINX Inc. All rights reserved.
+//
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
