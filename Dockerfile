@@ -1,5 +1,8 @@
 FROM golang:1.8-onbuild
 
+ENV USE_NGINX_PLUS true
+ENV AMPLIFY_KEY ''
+
 # Get other files required for installation
 RUN apt-get update && apt-get install -y \
     wget \
@@ -28,19 +31,11 @@ RUN mkdir -p /etc/ssl/nginx && \
 	vault read -field=value secret/ssl/key.pem > /etc/ssl/nginx/key.pem && \
 	vault read -field=value secret/ssl/dhparam.pem > /etc/ssl/nginx/dhparam.pem
 
-RUN wget -q -O /etc/ssl/nginx/CA.crt https://cs.nginx.com/static/files/CA.crt && \
-    wget -q -O - http://nginx.org/keys/nginx_signing.key | apt-key add - && \
-    wget -q -O /etc/apt/apt.conf.d/90nginx https://cs.nginx.com/static/files/90nginx && \
-    printf "deb https://plus-pkgs.nginx.com/debian `lsb_release -cs` nginx-plus\n" | tee /etc/apt/sources.list.d/nginx-plus.list
-
-# Install NGINX Plus
-RUN apt-get update && apt-get install -y nginx-plus
+# Install nginx
+ADD install-nginx.sh /usr/local/bin/
+RUN /usr/local/bin/install-nginx.sh
 
 RUN chown -R nginx /var/log/nginx/
-
-# Install Amplify
-RUN curl -sS -L -O  https://github.com/nginxinc/nginx-amplify-agent/raw/master/packages/install.sh && \
-	API_KEY='0202c79a3d8411fcf82b35bc3d458f7e' AMPLIFY_HOSTNAME='mesos-content-service' sh ./install.sh
 
 # forward request logs to Docker log collector
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
