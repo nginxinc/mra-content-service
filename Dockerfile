@@ -1,7 +1,7 @@
 FROM golang:1.8-onbuild
 
 ENV USE_NGINX_PLUS true
-ENV AMPLIFY_KEY ''
+
 
 # Get other files required for installation
 RUN apt-get update && apt-get install -y \
