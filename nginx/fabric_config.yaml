@@ -5,6 +5,7 @@ resolver:
 root: /
 services:
   album-manager:
-      server: marathon.mesos service=_album-manager._tcp
+      server: marathon.mesos
+      serviice: service=_album-manager._tcp
       expose_external: true
       healthcheck: true
