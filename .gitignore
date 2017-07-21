@@ -1,5 +1,6 @@
 
 .env
+vault_env.sh
 
 .idea/compiler.xml
 

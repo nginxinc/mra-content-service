@@ -13,13 +13,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install vault client
 RUN wget -q https://releases.hashicorp.com/vault/0.6.0/vault_0.6.0_linux_amd64.zip && \
-	  unzip -d /usr/local/bin vault_0.6.0_linux_amd64.zip
-
-# Download certificate and key from the the vault and copy to the build context
-ENV VAULT_TOKEN=4b9f8249-538a-d75a-e6d3-69f5355c1751 \
-    VAULT_ADDR=http://vault.mra.nginxps.com:8200
-
-RUN mkdir -p /etc/ssl/nginx && \
+	  unzip -d /usr/local/bin vault_0.6.0_linux_amd64.zip && \
+	. /etc/letsencrypt/vault_env.sh && \
+    mkdir -p /etc/ssl/nginx && \
 	vault token-renew && \
 	vault read -field=value secret/nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt && \
 	vault read -field=value secret/nginx-repo.key > /etc/ssl/nginx/nginx-repo.key && \
