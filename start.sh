@@ -16,8 +16,6 @@ $APP &
 
 nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;"
 
-service amplify-agent start
-
 sleep 10
 #APP gets rendered as go
 APP=go
