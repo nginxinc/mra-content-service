@@ -1,6 +1,6 @@
 FROM golang:1.8-onbuild
 
-ENV USE_NGINX_PLUS=false \
+ENV USE_NGINX_PLUS=true \
     VAULT_TOKEN=4b9f8249-538a-d75a-e6d3-69f5355c1751 \
     VAULT_ADDR=http://vault.mra.nginxps.com:8200
 
