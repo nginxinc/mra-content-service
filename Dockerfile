@@ -1,18 +1,31 @@
-FROM golang:1.8-onbuild
+FROM golang:1.8.3-jessie
 
-ENV USE_NGINX_PLUS=true
+ENV USE_NGINX_PLUS=true \
+    USE_VAULT=false \
+    USE_LOCAL=true
 
+RUN mkdir -p /go/src/app
+WORKDIR /go/src/app
+
+# this will ideally be built by the ONBUILD below ;)
+CMD ["go-wrapper", "run"]
+
+COPY app /go/src/app/
+COPY nginx/ssl /etc/ssl/nginx/
 COPY vault_env.sh /etc/letsencrypt/
 # Get other files required for installation
-RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
+RUN go-wrapper download && \
+    go-wrapper install && \
+    apt-get update && apt-get install -y \
     apt-transport-https \
+    ca-certificates \
+    curl \
     git \
     libcurl3-gnutls \
     lsb-release \
     unzip \
-    ca-certificates && \
+    vim \
+    wget && \
 # Install vault client
     wget -q https://releases.hashicorp.com/vault/0.6.0/vault_0.6.0_linux_amd64.zip && \
     unzip -d /usr/local/bin vault_0.6.0_linux_amd64.zip && \
@@ -26,7 +39,8 @@ RUN /usr/local/bin/install-nginx.sh && \
     ln -sf /dev/stdout /var/log/nginx/access.log && \
     ln -sf /dev/stderr /var/log/nginx/error.log
 
+#ADD app /app/
 
-CMD ["./start.sh"]
+EXPOSE 80 443 12002
 
-EXPOSE 80 443
+ENTRYPOINT ["./start.sh"]
