@@ -1,4 +1,4 @@
-{% macro location(name, healthcheck, healthcheck_uri) -%}
+{% macro location(name, service) -%}
   location /{{ name }}/ {
     proxy_pass https://{{ name }}/;
     proxy_set_header Host {{ name }};
@@ -13,8 +13,8 @@
     proxy_set_header Connection "";
     proxy_set_header Accept-Encoding "";
 
-    {% if healthcheck %}
-      health_check interval=2s fails=1 uri={{healthcheck_uri or "/"}};
+    {% if service.healthcheck %}
+      health_check interval=2s fails=1 uri={{ service.healthcheck_uri or "/" }};
     {% endif %}
   }
 {%- endmacro %}
@@ -38,7 +38,7 @@ http {
 
   {% for name, service in services.iteritems() %}
   upstream {{ name }} {
-    server        {{ service.server }} {{ service.service }} resolve;
+    server        {% if service.server == None %}{{ name }}{% else %}{{ service.server }}{% endif %} {{ service.service }} resolve;
     zone backend  64k;
     least_time 		last_byte;
     keepalive 		300;
@@ -49,7 +49,7 @@ http {
     listen 80;
 
     {% for name, service in services.iteritems() %}
-      {{ location(name, service.healthcheck, service.healthcheck_uri) }}
+      {{ location(name, service) }}
     {% endfor %}
 
     location / {
@@ -76,7 +76,7 @@ http {
     include default-location.conf;
 
     {% for name, service in services.iteritems() if service.expose_external%}
-      {{ location(name) }}
+      {{ location(name, service) }}
     {% endfor %}
 
     location = /status.html {

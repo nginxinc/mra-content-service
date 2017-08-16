@@ -35,7 +35,7 @@ http {
 
   {% for name, service in services.iteritems() %}
   upstream {{ name }}.oss {
-    server        {{ name }}.oss.{{ service.server }}:{{ service.oss_port}};
+    server        {{ name }}.oss{% if service.server != None %}.{{ service.server }}{% endif %}:{{ service.oss_port}};
     zone backend  64k;
     keepalive 		300;
   }

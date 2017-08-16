@@ -1,0 +1,11 @@
+name: content-service
+resolver:
+  host: 127.0.0.11
+  ttl: 3s
+root: /
+services:
+  album-manager:
+    server:
+    expose_external: true
+    healthcheck: false
+    port: 82

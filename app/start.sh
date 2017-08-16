@@ -3,12 +3,13 @@ NGINX_PID="/var/run/nginx.pid"    # /   (root directory)
 APP="go run error.go handlers.go logger.go main.go router.go routes.go"
 
 NGINX_CONF="/etc/nginx/nginx.conf";
-NGINX_FABRIC="/etc/nginx/nginx-fabric.conf";
+
+if [ ! -f .env ]; then
+    touch .env
+fi
 
 if [ "$NETWORK" = "fabric" ]
 then
-    NGINX_CONF=$NGINX_FABRIC;
-    echo This is the nginx conf = $NGINX_CONF;
     echo fabric configuration set;
 fi
 
