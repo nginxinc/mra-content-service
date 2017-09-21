@@ -1,0 +1,13 @@
+name: content-service
+resolver:
+  host: kube-dns.kube-system.svc.cluster.local
+  ttl: 3s
+root: /
+namespace: nginx-mra
+services:
+  album-manager:
+    server: nginx-mra.svc.cluster.local
+    service: service=_https._tcp.album-manager
+    expose_external: true
+    healthcheck: true
+    oss_port: 12001
