@@ -1,0 +1,7 @@
+nginx-repo.crt
+nginx-repo.key
+csr.pem
+certificate.pem
+key.pem
+dhparam.pem
+
