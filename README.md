@@ -141,3 +141,9 @@ In order to run the image, some environment variables must be set so that they a
 | Variable Name | Description | Example Value |
 | ------------- | ----------- | ----------- |
 | RETHINKDB_URL | The internal URL of the content service, including the port | content-db.local:28015 |
+
+
+#### \*Disclaimer\*
+
+
+In this service, the `nginx/ssl/dhparam.pem` file is provided for ease of setup. In production environments, it is highly recommended for secure key-exchange to replace this file with your own generated DH parameter.
