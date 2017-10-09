@@ -1,13 +1,13 @@
 FROM golang:1.8.3-jessie
 
 ENV USE_NGINX_PLUS=true \
-    USE_VAULT=true \
+    USE_VAULT=false \
 # CONTAINER_ENGINE specifies the container engine to which the
 # containers will be deployed. Valid values are:
 # - kubernetes
-# - mesos
+# - mesos (default)
 # - local
-    CONTAINER_ENGINE=kubernetes
+#    CONTAINER_ENGINE=kubernetes
 
 RUN mkdir -p /go/src/app
 WORKDIR /go/src/app
@@ -38,8 +38,8 @@ ADD install-nginx.sh /usr/local/bin/
 COPY nginx /etc/nginx/
 RUN /usr/local/bin/install-nginx.sh && \
 # forward request logs to Docker log collector
-    ln -sf /dev/stdout /var/log/nginx/access.log && \
-    ln -sf /dev/stderr /var/log/nginx/error.log
+    ln -sf /dev/stdout /var/log/nginx/access_log && \
+    ln -sf /dev/stderr /var/log/nginx/error_log
 
 #ADD app /app/
 
