@@ -1,0 +1,4 @@
+vault_env.sh
+nginx-repo.crt
+nginx-repo.key
+dhparam.pem
