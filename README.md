@@ -135,12 +135,24 @@ Replace _&lt;your-image-repo-name&gt;_ and execute the command below to build th
 docker build . -t <your-image-repo-name>/photoresizer:<tag>
 ```
 
-### Runtime environment variables
+### 5. Runtime environment variables
 In order to run the image, some environment variables must be set so that they are available during runtime.
 
 | Variable Name | Description | Example Value |
 | ------------- | ----------- | ----------- |
 | RETHINKDB_URL | The internal URL of the content service, including the port | content-db.local:28015 |
+
+## 6. Service Endpoints
+
+| Method | Endpoint | Description | Parameters |
+| ------ | -------- | ----------- | ---------- |
+| GET | / | Return "Welcome to the content service!" | none |
+| GET | /v1/content | Lists all articles | none |
+| GET | /v1/content/{articleId} | List single article based on id | articleId - ID of article  |
+| POST | /v1/content | Create a new article | Article - information about article |
+| PUT | /v1/content/{articleId} | Update article based on id | articleId - ID of article<br/><br/>article - information about article |
+| PATCH | /v1/content/{articleId}/<br/>{element}/{newValue} | Update specific article based on id with new data element and value | articleId - ID of article<br/><br/>element - element to insert into article<br/><br/>newValue - value of element to be inserted |
+| DELETE | /v1/content/{articleId} | Delete article based on id | id - ID of article |
 
 
 #### \*Disclaimer\*
