@@ -149,7 +149,7 @@ In order to run the image, some environment variables must be set so that they a
 | GET | / | Return "Welcome to the content service!" | none |
 | GET | /v1/content | Lists all articles | none |
 | GET | /v1/content/{articleId} | List single article based on id | articleId - ID of article  |
-| POST | /v1/content | Create a new article | Article - information about article |
+| POST | /v1/content | Create a new article | article - information about article |
 | PUT | /v1/content/{articleId} | Update article based on id | articleId - ID of article<br/><br/>article - information about article |
 | PATCH | /v1/content/{articleId}/<br/>{element}/{newValue} | Update specific article based on id with new data element and value | articleId - ID of article<br/><br/>element - element to insert into article<br/><br/>newValue - value of element to be inserted |
 | DELETE | /v1/content/{articleId} | Delete article based on id | id - ID of article |
