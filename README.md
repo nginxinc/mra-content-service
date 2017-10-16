@@ -142,7 +142,7 @@ In order to run the image, some environment variables must be set so that they a
 | ------------- | ----------- | ----------- |
 | RETHINKDB_URL | The internal URL of the content service, including the port | content-db.local:28015 |
 
-## 6. Service Endpoints
+### 6. Service Endpoints
 
 | Method | Endpoint | Description | Parameters |
 | ------ | -------- | ----------- | ---------- |
