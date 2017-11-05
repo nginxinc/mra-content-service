@@ -8,7 +8,7 @@ import (
 	"log"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"os"
+	"strings"
 )
 
 //
@@ -19,50 +19,77 @@ import (
 //
 
 type Photo struct {
-	Name    string `gorethink:"name"`
-	Url   string `gorethink:"url"`
+	Name	string	`gorethink:"name"`
+	Url		string	`gorethink:"url"`
 }
 
 type Post struct {
-	Id	string		`gorethink:"id,omitempty"`
-	Date     time.Time         `gorethink:"date" json:"date"`
-	Location  string       `gorethink:"location,omitempty" json:"location"`
-	Author  string       `gorethink:"author,omitempty" json:"author"`
-	Photo  string       `gorethink:"photo,omitempty" json:"photo"`
-	Title  string       `gorethink:"title,omitempty" json:"title"`
-	Extract  string       `gorethink:"extract,omitempty" json:"extract"`
-	Body  string       `gorethink:"body,omitempty" json:"body"`
+	Id		  string	`gorethink:"id,omitempty"`
+	Date      time.Time	`gorethink:"date" json:"date"`
+	Location  string	`gorethink:"location,omitempty" json:"location"`
+	Author    string	`gorethink:"author,omitempty" json:"author"`
+	Photo     string	`gorethink:"photo,omitempty" json:"photo"`
+	Title     string	`gorethink:"title,omitempty" json:"title"`
+	Extract   string	`gorethink:"extract,omitempty" json:"extract"`
+	Body      string	`gorethink:"body,omitempty" json:"body"`
 }
 
-func Welcome(w http.ResponseWriter, r *http.Request) {
+type Env struct {
+	Session  *db.Session
+	Mock	 *db.Mock
+	IsTest	 bool
+}
+
+type Handler struct {
+	*Env
+	H func(e *Env, w http.ResponseWriter, r *http.Request) error
+}
+
+type HandlerFunc func(e *Env, w http.ResponseWriter, r *http.Request) error
+
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := h.H(h.Env, w, r)
+	if err != nil {
+		switch e := err.(type) {
+		case Error:
+			// We can retrieve the status here and write out a specific
+			// HTTP status code.
+			log.Printf("HTTP %d - %s", e.Status(), e)
+			http.Error(w, e.Error(), e.Status())
+		default:
+			// Any error types we don't specifically look out for default
+			// to serving a HTTP 500
+			http.Error(w, http.StatusText(http.StatusInternalServerError),
+				http.StatusInternalServerError)
+		}
+	}
+}
+
+func Welcome(env *Env, w http.ResponseWriter, r *http.Request) error {
 	fmt.Fprint(w, "Welcome to the content service!")
+	return nil
 }
 
-func Articles(w http.ResponseWriter, r *http.Request) {
-	fmt.Print(os.Getenv("RETHINKDB_URL"))
-	var session *db.Session
+func Articles(env *Env, w http.ResponseWriter, r *http.Request) error {
+	var resp *db.Cursor
 	var err error
 
-	session, err = db.Connect(db.ConnectOpts{
-		Address: os.Getenv("RETHINKDB_URL"),
-	})
-	if err != nil {
-		log.Fatalln(err.Error())
+	if env.IsTest {
+		resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(env.Mock)
+	} else {
+		resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(env.Session)
 	}
-
-	resp, err := db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(session)
 	if err != nil {
 		fmt.Print(err)
-		return
+		return StatusError{500, err}
 	}
-
 	defer resp.Close()
 
 	var posts []interface{}
 	err = resp.All(&posts)
 	if err != nil {
 		fmt.Printf("Error scanning database result: %s", err)
-		return
+		return StatusError{500, err}
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -72,28 +99,25 @@ func Articles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Printf("%d posts", len(posts))
+	return nil
 }
 
-func Article(w http.ResponseWriter, r *http.Request) {
+func Article(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	var articleId string
+	var resp *db.Cursor
+	var err error
 
 	articleId = vars["articleId"]
 
-	var session *db.Session
-	var err error
-
-	session, err = db.Connect(db.ConnectOpts{
-		Address: os.Getenv("RETHINKDB_URL"),
-	})
-	if err != nil {
-		log.Fatalln(err.Error())
+	if env.IsTest {
+		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Mock)
+	} else {
+		resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Session)
 	}
-
-	resp, err := db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(session)
 	if err != nil {
 		fmt.Print(err)
-		return
+		return StatusError{500, err}
 	}
 
 	defer resp.Close()
@@ -102,7 +126,7 @@ func Article(w http.ResponseWriter, r *http.Request) {
 	err = resp.All(&post)
 	if err != nil {
 		fmt.Printf("Error scanning database result: %s", err)
-		return
+		return StatusError{500, err}
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -110,39 +134,41 @@ func Article(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(post); err != nil {
 		panic(err)
 	}
+	return nil
 }
 
-func NewArticle(w http.ResponseWriter, r *http.Request) {
+func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	decoder := json.NewDecoder(r.Body)
 	var newPost Post
+	var resp db.WriteResponse
 	err := decoder.Decode(&newPost)
 	if err != nil {
 		panic(err)
 	}
 	defer r.Body.Close()
 
-	var session *db.Session
-	session, err = db.Connect(db.ConnectOpts{
-		Address: os.Getenv("RETHINKDB_URL"),
-	})
-	if err != nil {
-		log.Fatalln(err.Error())
+	if env.IsTest {
+		resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Mock)
+	} else {
+		newPost.Date = time.Now()
+		resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
 	}
-	newPost.Date = time.Now()
-	resp, err := db.DB("content").Table("posts").Insert(newPost).RunWrite(session)
 	if err != nil {
 		fmt.Print(err)
-		return
+		return StatusError{500, err}
 	}
 
 	fmt.Printf("%d row inserted, %d key generated", resp.Inserted, len(resp.GeneratedKeys))
 	fmt.Fprint(w, resp.GeneratedKeys)
+
+	return nil
 }
 
-func ReplaceArticle(w http.ResponseWriter, r *http.Request) {
+func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	var articleId string
 	articleId = vars["articleId"]
+	var resp db.WriteResponse
 
 	decoder := json.NewDecoder(r.Body)
 	var newPost Post
@@ -151,34 +177,31 @@ func ReplaceArticle(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	defer r.Body.Close()
-	newPost.Id = articleId
-
-	var session *db.Session
-	session, err = db.Connect(db.ConnectOpts{
-		Address: os.Getenv("RETHINKDB_URL"),
-	})
-	if err != nil {
-		log.Fatalln(err.Error())
+	if env.IsTest {
+		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Replace(newPost).RunWrite(env.Mock)
+	} else {
+		newPost.Id = articleId
+		newPost.Date = time.Now()
+		resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost).RunWrite(env.Session)
 	}
-
-	newPost.Date = time.Now()
-	resp, err := db.DB("content").Table("posts").Get(articleId).Replace(newPost).RunWrite(session)
 	if err != nil {
 		fmt.Print(err)
-		return
+		return StatusError{500, err}
 	}
 
 	printObj(w, resp)
+
+	return nil
 }
 
-func UpdateArticle(w http.ResponseWriter, r *http.Request) {
+func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
-	var articleId string
-	articleId = vars["articleId"]
-	var element string
-	var newValue string
-	element = vars["element"]
-	newValue = vars["newValue"]
+	var articleId string = vars["articleId"]
+	var element string = vars["element"]
+	var newValue string = vars["newValue"]
+
+	var resp db.WriteResponse
+	var err error
 
 	str := `{"` + element +`": "` + newValue + `"}`
 	fmt.Print(str)
@@ -186,48 +209,44 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal([]byte(str), &res)
 	fmt.Println(res)
 
-	var session *db.Session
-	var err error
-	session, err = db.Connect(db.ConnectOpts{
-		Address: os.Getenv("RETHINKDB_URL"),
-	})
-	if err != nil {
-		log.Fatalln(err.Error())
+	if env.IsTest {
+		s := strings.Split(r.URL.Path, "/")
+		resp, err = db.DB("content").Table("posts").Get(s[3]).Update(`{"` + s[4] +`": "` + s[5] + `"}`).RunWrite(env.Mock)
+	} else {
+		resp, err = db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(env.Session)
 	}
-
-	resp, err := db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(session)
 	if err != nil {
 		fmt.Print(err)
-		return
+		return StatusError{500, err}
 	}
 
 	printObj(w, resp)
+
+	return nil
 }
 
-func DeleteArticle(w http.ResponseWriter, r *http.Request) {
+func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
-	var articleId string
-	articleId = vars["articleId"]
+	var articleId string = vars["articleId"]
 
-	var session *db.Session
+	var resp *db.Cursor
 	var err error
 
-	session, err = db.Connect(db.ConnectOpts{
-		Address: os.Getenv("RETHINKDB_URL"),
-	})
-	if err != nil {
-		log.Fatalln(err.Error())
+	if env.IsTest {
+		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Delete().Run(env.Mock)
+	} else {
+		resp, err = db.DB("content").Table("posts").Get(articleId).Delete().Run(env.Session)
 	}
-
-	resp, err := db.DB("content").Table("posts").Get(articleId).Delete().Run(session)
 	if err != nil {
 		fmt.Print(err)
-		return
+		return StatusError{500, err}
 	}
 
 	defer resp.Close()
 
 	printObj(w, resp)
+
+	return nil
 }
 
 func printObj(w http.ResponseWriter, v interface{}) {
