@@ -11,8 +11,7 @@ import (
 
 var mock = db.NewMock()
 var testEnv = &Env{
-	Session: nil,
-	Mock: mock,
+	Session: mock,
 	IsTest: true,
 }
 

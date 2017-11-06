@@ -35,8 +35,7 @@ type Post struct {
 }
 
 type Env struct {
-	Session  *db.Session
-	Mock	 *db.Mock
+	Session  db.QueryExecutor
 	IsTest	 bool
 }
 
@@ -74,11 +73,7 @@ func Articles(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var resp *db.Cursor
 	var err error
 
-	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(env.Mock)
-	} else {
-		resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(env.Session)
-	}
+	resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -111,7 +106,7 @@ func Article(env *Env, w http.ResponseWriter, r *http.Request) error {
 	articleId = vars["articleId"]
 
 	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Mock)
+		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Session)
 	} else {
 		resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Session)
 	}
@@ -148,7 +143,7 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 
 	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Mock)
+		resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
 	} else {
 		newPost.Date = time.Now()
 		resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
@@ -178,7 +173,7 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Replace(newPost).RunWrite(env.Mock)
+		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Replace(newPost).RunWrite(env.Session)
 	} else {
 		newPost.Id = articleId
 		newPost.Date = time.Now()
@@ -211,7 +206,7 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	if env.IsTest {
 		s := strings.Split(r.URL.Path, "/")
-		resp, err = db.DB("content").Table("posts").Get(s[3]).Update(`{"` + s[4] +`": "` + s[5] + `"}`).RunWrite(env.Mock)
+		resp, err = db.DB("content").Table("posts").Get(s[3]).Update(`{"` + s[4] +`": "` + s[5] + `"}`).RunWrite(env.Session)
 	} else {
 		resp, err = db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(env.Session)
 	}
@@ -233,7 +228,7 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var err error
 
 	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Delete().Run(env.Mock)
+		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Delete().Run(env.Session)
 	} else {
 		resp, err = db.DB("content").Table("posts").Get(articleId).Delete().Run(env.Session)
 	}

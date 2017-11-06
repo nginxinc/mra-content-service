@@ -34,7 +34,6 @@ func main() {
 
 	env := &Env{
 		Session: session,
-		Mock: nil,
 		IsTest: false,
     }
 
