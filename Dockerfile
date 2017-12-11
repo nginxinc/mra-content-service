@@ -1,6 +1,6 @@
 FROM golang:1.8.3-jessie
 
-ARG CONTAINER_ENGINE
+ARG CONTAINER_ENGINE_ARG
 ENV USE_NGINX_PLUS=true \
     USE_VAULT=false \
 # CONTAINER_ENGINE specifies the container engine to which the
@@ -8,9 +8,9 @@ ENV USE_NGINX_PLUS=true \
 # - kubernetes
 # - mesos (default)
 # - local
-    CONTAINER_ENGINE=${CONTAINER_ENGINE:-kubernetes}
+    CONTAINER_ENGINE=${CONTAINER_ENGINE_ARG:-kubernetes}
 
-RUN mkdir -p /go/src/app && echo ${CONTAINER_ENGINE}
+RUN mkdir -p /go/src/app && echo ${CONTAINER_ENGINE_ARG}
 WORKDIR /go/src/app
 
 # this will ideally be built by the ONBUILD below ;)
