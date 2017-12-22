@@ -1,7 +1,5 @@
 package main
 
-import "net/http"
-
 //
 //  routes.go
 //  ContentService
@@ -13,7 +11,7 @@ type Route struct {
 	Name        string
 	Method      string
 	Pattern     string
-	HandlerFunc http.HandlerFunc
+	Function HandlerFunc
 }
 
 type Routes []Route

@@ -24,6 +24,7 @@ func main() {
 
 	var session *db.Session
 
+	fmt.Print(os.Getenv("RETHINKDB_URL"))
 	session, err = db.Connect(db.ConnectOpts{
 		Address: os.Getenv("RETHINKDB_URL"),
 	})
@@ -31,21 +32,26 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	resp, err := db.DBCreate("content").RunWrite(session)
+	env := &Env{
+		Session: session,
+		IsTest: false,
+    }
+
+	resp, err := db.DBCreate("content").RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 	}
 
 	fmt.Printf("%d DB created", resp.DBsCreated)
 
-	response, err := db.DB("content").TableCreate("posts").RunWrite(session)
+	response, err := db.DB("content").TableCreate("posts").RunWrite(env.Session)
 	if err != nil {
 		log.Print("Error creating table: " + err.Error())
 	}
 
 	fmt.Printf("%d table created", response.TablesCreated)
 
-	router := NewRouter()
+	router := NewRouter(env)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
