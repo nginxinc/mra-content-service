@@ -1,15 +1,19 @@
 FROM golang:1.8.3-jessie
 
-ENV USE_NGINX_PLUS=true \
-    USE_VAULT=false \
+ARG CONTAINER_ENGINE_ARG
+ARG USE_NGINX_PLUS_ARG
+ARG USE_VAULT_ARG
+
+ENV USE_NGINX_PLUS=${USE_NGINX_PLUS_ARG:-true} \
+    USE_VAULT=${USE_VAULT_ARG:-false} \
 # CONTAINER_ENGINE specifies the container engine to which the
 # containers will be deployed. Valid values are:
 # - kubernetes
 # - mesos (default)
 # - local
-#    CONTAINER_ENGINE=kubernetes
+    CONTAINER_ENGINE=${CONTAINER_ENGINE_ARG:-kubernetes}
 
-RUN mkdir -p /go/src/app
+RUN mkdir -p /go/src/app && echo ${CONTAINER_ENGINE_ARG}
 WORKDIR /go/src/app
 
 # this will ideally be built by the ONBUILD below ;)
@@ -17,7 +21,6 @@ CMD ["go-wrapper", "run"]
 
 COPY app /go/src/app/
 COPY nginx/ssl /etc/ssl/nginx/
-COPY vault_env.sh /etc/letsencrypt/
 # Get other files required for installation
 RUN go-wrapper download && \
     go-wrapper install && \
@@ -41,7 +44,7 @@ RUN /usr/local/bin/install-nginx.sh && \
     ln -sf /dev/stdout /var/log/nginx/access_log && \
     ln -sf /dev/stderr /var/log/nginx/error_log
 
-#ADD app /app/
+RUN ./test.sh
 
 EXPOSE 80 443 12002
 

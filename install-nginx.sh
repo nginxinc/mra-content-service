@@ -5,17 +5,15 @@ chmod +x /usr/local/sbin/generate_config
 
 CONFIG_FILE=/etc/nginx/fabric_config.yaml
 
+echo -e "\033[32m -----"
+echo -e "\033[32m Building for ${CONTAINER_ENGINE}"
+echo -e "\033[32m -----\033[0m"
+
 case "$CONTAINER_ENGINE" in
     kubernetes)
-        echo -e "\033[32m -----"
-        echo -e "\033[32m Building for Kubernetes"
-        echo -e "\033[32m -----\033[0m"
         CONFIG_FILE=/etc/nginx/fabric_config_k8s.yaml
         ;;
     local)
-        echo -e "\033[32m -----"
-        echo -e "\033[32m Building for local"
-        echo -e "\033[32m -----\033[0m"
         CONFIG_FILE=/etc/nginx/fabric_config_local.yaml
         ;;
 esac
@@ -24,7 +22,7 @@ if [ "$USE_VAULT" = true ]; then
 # Install vault client
     wget -q https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_linux_amd64.zip && \
     unzip -d /usr/local/bin vault_0.5.2_linux_amd64.zip && \
-    . /etc/letsencrypt/vault_env.sh && \
+    . /etc/ssl/nginx/vault_env.sh && \
     mkdir -p /etc/ssl/nginx && \
     vault token-renew && \
 # Download certificate and key from the the vault and copy to the build context

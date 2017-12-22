@@ -11,7 +11,7 @@ syslog_access_log_location: "syslog:server=localhost:5544,facility=local6,tag=pa
 access_log_location: "/var/log/nginx/access_log combined"
 services:
   album-manager:
-    server:
+    server: album-manager:443
     expose_external: true
     healthcheck: false
     port: 82

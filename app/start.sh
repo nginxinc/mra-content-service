@@ -15,12 +15,14 @@ fi
 
 $APP &
 
-nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;"
+nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
 
 sleep 10
 #APP gets rendered as go
 APP=go
 APP_PID=`ps aux | grep "$APP" | grep -v grep`
+
+./insert.sh
 
 while [ -f "$NGINX_PID" ] &&  [ "$APP_PID" ];
 do
