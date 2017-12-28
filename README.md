@@ -1,5 +1,4 @@
 # NGINX Microservices Reference Architecture: Content Service
-
 This repository contains a simple Go application and provides retrieves and displays content for the NGINX _Ingenious_ application. The 
 _Ingenious_ application has been developed by the NGINX Professional Services team to provide a reference 
 architecture for building your own microservices based application using NGINX as the service mesh for the services. 
@@ -112,13 +111,24 @@ Replace _&lt;your-image-repo-name&gt;_ with the username for where you store you
 docker build . -t <your-image-repo-name>/content-service:<tag>
 ```
 
-### Runtime environment variables
+### 5. Runtime environment variables
 In order to run the image, some environment variables must be set so that they are available during runtime.
 
 | Variable Name | Description                                                   | Example Value         |
 | ------------- | ------------------------------------------------------------- | --------------------- |
 | RETHINKDB_URL | The internal URL of the content service, including the port   | content-db.local:28015|
 
+### 6. Service Endpoints
+
+| Method | Endpoint                                     | Description                      | Parameters                                                                                    |
+| ------ | -------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------- |
+| GET    | /                                            | Return a string                  |                                                                                               |
+| GET    | /v1/content                                  | Return all the articles          |                                                                                               |
+| GET    | /v1/content/{articleId}                      | Get article by article id        | articleId - id for article                                                                    |
+| POST   | /v1/content                                  | Create a new article             | body - article information                                                                    |
+| PUT    | /v1/content/{articleId}                      | Replace an article by article id | body - article information, articleId - id for article                                        |
+| PATCH  | /v1/content/{articleId}/{element}/{newValue} | Update a field of an article     | articleId - id for article, element - element to change, newValue - new value for the element |
+| DELETE | /v1/content/{articleId}                      | Delete article by article id     | articleId - if for article                                                                    |
 
 ### Disclaimer
 In this service, the **nginx/ssl/dhparam.pem** file is provided for ease of setup. In production environments, it is highly recommended for secure key-exchange to replace this file with your own generated DH parameter.
