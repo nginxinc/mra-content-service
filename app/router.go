@@ -1,27 +1,26 @@
 package main
 
 import (
-	// "net/http"
-
 	"github.com/gorilla/mux"
 )
 
 //
-//  router.go
-//  ContentService
+// router.go
+// ContentService
 //
-//  Copyright © 2017 NGINX Inc. All rights reserved.
+// Copyright © 2017 NGINX Inc. All rights reserved.
 //
 
+// Router for associating HTTP requests with functions based on URI
+// Router takes parameters: Name, Method, Path, and Handler to associate
+// with a function
 func NewRouter(env *Env) *mux.Router {
 
+	// Create new gorilla/mux router with with strict slash
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range routes {
-		// var handler http.Handler
 
-		// handler = route.HandlerFunc
-		// handler = Logger(handler, route.Name)
-
+		// Associate each route with an HTTP endpoint
 		router.
 		Methods(route.Method).
 			Path(route.Pattern).
@@ -30,5 +29,6 @@ func NewRouter(env *Env) *mux.Router {
 
 	}
 
+	// Return router to be used by server
 	return router
 }
