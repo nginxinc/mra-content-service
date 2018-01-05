@@ -1,5 +1,5 @@
 # NGINX Microservices Reference Architecture: Content Service
-This repository contains a simple Go application and provides retrieves and displays content for the NGINX _Ingenious_ application. The 
+This repository contains a simple Go application and provides, retrieves, and displays content for the NGINX _Ingenious_ application. The 
 _Ingenious_ application has been developed by the NGINX Professional Services team to provide a reference 
 architecture for building your own microservices based application using NGINX as the service mesh for the services. 
 
