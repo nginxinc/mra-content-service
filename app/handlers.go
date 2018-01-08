@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 	db "gopkg.in/gorethink/gorethink.v3"
+	"github.com/benbjohnson/clock"
 	"log"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"strings"
 )
 
 //
@@ -38,10 +38,9 @@ type Post struct {
 
 // Environment object used to inject database state into handlers
 // Practically used to test handlers with a mock database
-// (Should remove IsTest in future releases when mux is fixed)
 type Env struct {
 	Session  db.QueryExecutor
-	IsTest	 bool
+	Clock	 clock.Clock
 }
 
 // Handler object used for allowing handler functions to accept
@@ -128,13 +127,8 @@ func GetArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
 
-	// IsTest variable shouldn't be necessary, but setting mux variables
-	// must be set correctly in tests in order to avoid this
-	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Session)
-	} else {
-		resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Session)
-	}
+	// Make call to rethink database
+	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -175,14 +169,10 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 
-	// IsTest variable shouldn't be necessary, but setting mux variables
-	// must be set correctly in tests in order to avoid this
-	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
-	} else {
-		newPost.Date = time.Now()
-		resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
-	}
+	newPost.Date = env.Clock.Now()
+
+	// Make call to rethink database
+	resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -217,15 +207,12 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	defer r.Body.Close()
 
-	// IsTest variable shouldn't be necessary, but setting mux variables
-	// must be set correctly in tests in order to avoid this
-	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Replace(newPost).RunWrite(env.Session)
-	} else {
-		newPost.Id = articleId
-		newPost.Date = time.Now()
-		resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost).RunWrite(env.Session)
-	}
+	// Set id of article to fetch
+	newPost.Id = articleId
+	newPost.Date = env.Clock.Now()
+
+	// Make call to rethink database
+	resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -259,15 +246,9 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Unmarshal str variable into Post object
 	res := Post{}
 	json.Unmarshal([]byte(str), &res)
-
-	// IsTest variable shouldn't be necessary, but setting mux variables
-	// must be set correctly in tests in order to avoid this
-	if env.IsTest {
-		s := strings.Split(r.URL.Path, "/")
-		resp, err = db.DB("content").Table("posts").Get(s[3]).Update(`{"` + s[4] +`": "` + s[5] + `"}`).RunWrite(env.Session)
-	} else {
-		resp, err = db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(env.Session)
-	}
+	
+	// Make call to rethink database
+	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -291,13 +272,8 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
 
-	// IsTest variable shouldn't be necessary, but setting mux variables
-	// must be set correctly in tests in order to avoid this
-	if env.IsTest {
-		resp, err = db.DB("content").Table("posts").Get(strings.Split(r.URL.Path, "/")[3]).Delete().Run(env.Session)
-	} else {
-		resp, err = db.DB("content").Table("posts").Get(articleId).Delete().Run(env.Session)
-	}
+	// Make call to rethink database
+	resp, err = db.DB("content").Table("posts").Get(articleId).Delete().Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
