@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"net/http"
 	db "gopkg.in/gorethink/gorethink.v3"
+	"github.com/benbjohnson/clock"
 	"bytes"
 	"encoding/json"
 )
@@ -22,7 +23,7 @@ var mock = db.NewMock()
 // Used to inject mock database into handlers for testing
 var testEnv = &Env{
 	Session: mock,
-	IsTest: true,
+	Clock: clock.NewMock(),
 }
 
 // Tests NewArticle function
@@ -31,7 +32,7 @@ func TestNewArticle(t *testing.T) {
 	id := `{"location":"locationCreate", "author":"nameCreate", "photo":"photoCreate", "title":"titleCreate", "extract":"extractCreate", "body":"bodyCreate"}`
 	post := Post{}
 	json.Unmarshal([]byte(id), &post)
-
+	post.Date = testEnv.Clock.Now()
 	// Specify return variable for what should be returned by database
 	var resp db.WriteResponse
 	resp.Inserted = 1
@@ -39,8 +40,7 @@ func TestNewArticle(t *testing.T) {
 
 	// Set database return values on reception of request to create article
 	// with new Post object
-	mock.On(db.DB("content").Table("posts").Insert(post)).Return(
-		resp, nil)
+	mock.On(db.DB("content").Table("posts").Insert(post)).Return(resp, nil)
 
 	// Create new HTTP request
 	// Method: POST
@@ -55,8 +55,7 @@ func TestNewArticle(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Call Articles handler
-	handler := Handler{testEnv, NewArticle}
-	handler.ServeHTTP(rr, req)
+	NewRouter(testEnv).ServeHTTP(rr, req)
 
 	// Check status code of response
 	if status := rr.Code; status != http.StatusOK {
@@ -97,8 +96,7 @@ func TestGetAllArticles(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Call GetAllArticles handler
-	handler := Handler{testEnv, GetAllArticles}
-	handler.ServeHTTP(rr, req)
+	NewRouter(testEnv).ServeHTTP(rr, req)
 
 	// Check status code of response
 	if status := rr.Code; status != http.StatusOK {
@@ -136,8 +134,7 @@ func TestGetArticle(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Call GetArticle handler
-	handler := Handler{testEnv, GetArticle}
-	handler.ServeHTTP(rr, req)
+	NewRouter(testEnv).ServeHTTP(rr, req)
 
 	// Check status code of response
 	if status := rr.Code; status != http.StatusOK {
@@ -157,13 +154,15 @@ func TestReplaceArticle(t *testing.T) {
 	id := `{"author":"newAuthor"}`
 	post := Post{}
 	json.Unmarshal([]byte(id), &post)
+	post.Date = testEnv.Clock.Now()
+	post.Id = articleId
 
 	var resp db.WriteResponse
 	resp.Replaced = 2
 
 	// Set database return values on reception of request to replace article
 	// with specified article ID and Post object
-	mock.On(db.DB("content").Table("posts").Get(`cc60e237-fa52-4b9c-9d72-de2ae808f535`).Replace(post)).Return(
+	mock.On(db.DB("content").Table("posts").Get(articleId).Replace(post)).Return(
 		resp, nil)
 
 	// Create new HTTP request
@@ -179,8 +178,7 @@ func TestReplaceArticle(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Call ReplaceArticle handler
-	handler := Handler{testEnv, ReplaceArticle}
-	handler.ServeHTTP(rr, req)
+	NewRouter(testEnv).ServeHTTP(rr, req)
 
 	// Check status code of response
 	if status := rr.Code; status != http.StatusOK {
@@ -203,13 +201,16 @@ func TestUpdateArticle(t *testing.T) {
 	articleId := `cc60e237-fa52-4b9c-9d72-de2ae808f535`
 	element := `author`
 	newValue := `newValue`
+	str := `{"` + element +`": "` + newValue + `"}`
+	post := Post{}
+	json.Unmarshal([]byte(str), &post)
 
 	var resp db.WriteResponse
 	resp.Replaced = 1
 
 	// Set database return values on reception of request to update article
 	// with specified article ID and element + newValue pair
-	mock.On(db.DB("content").Table("posts").Get(articleId).Update(`{"` + element +`": "` + newValue + `"}`)).Return(
+	mock.On(db.DB("content").Table("posts").Get(articleId).Update(post)).Return(
 		resp, nil)
 
 	// Create new HTTP request
@@ -224,9 +225,7 @@ func TestUpdateArticle(t *testing.T) {
 	// Initilize new recorder for testing response of handler
 	rr := httptest.NewRecorder()
 
-	// Call UpdateArticle handler
-	handler := Handler{testEnv, UpdateArticle}
-	handler.ServeHTTP(rr, req)
+	NewRouter(testEnv).ServeHTTP(rr, req)
 
 	// Check status code of response
 	if status := rr.Code; status != http.StatusOK {
@@ -265,8 +264,7 @@ func TestDeleteArticle(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Call DeleteArticle handler
-	handler := Handler{testEnv, DeleteArticle}
-	handler.ServeHTTP(rr, req)
+	NewRouter(testEnv).ServeHTTP(rr, req)
 
 	// Check status code of response
 	if status := rr.Code; status != http.StatusOK {
