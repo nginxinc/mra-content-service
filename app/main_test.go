@@ -118,7 +118,7 @@ func TestGetArticle(t *testing.T) {
 
 	// Set database return values on reception of request to get article
 	// with specified article ID
-	mock.On(db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body")).Return(
+	mock.On(db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract")).Return(
 		expected, nil)
 
 	// Create new HTTP request
