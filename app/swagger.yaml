@@ -1,0 +1,152 @@
+swagger: "2.0"
+info:
+  description: "MRA Content Service API"
+  version: "1.0.0"
+  title: "MRA Content Service API"
+  contact:
+    name: "Aidan Carson"
+    email: "aidan.carson@nginx.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+# basePath: "/v1"
+paths:
+  /:
+    get:
+      responses:
+        default:
+          description: "successful operation"
+  /v1/content:
+    get:
+      tags:
+      - "article"
+      summary: "Fetch all articles"
+      responses:
+        default:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Article"
+      x-tags:
+      - tag: "article"
+      x-operationId: "Articles"
+    post:
+      tags:
+      - "article"
+      summary: "Create new article"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "New article object"
+        required: true
+        schema:
+          $ref: "#/definitions/Article"
+      responses:
+        200:
+          description: "successful operation"
+      x-tags:
+      - tag: "article"
+      x-operationId: "NewArticle"
+  /v1/content/{articleId}:
+    get:
+      tags:
+      - "article"
+      summary: "Fetch single article based on id"
+      parameters:
+      - name: "articleId"
+        in: "path"
+        description: "The id of article to be fetched"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Article"
+    put:
+      tags:
+      - "article"
+      summary: "Update existing article"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "New article object"
+        required: true
+        schema:
+          $ref: "#/definitions/Article"
+      responses:
+        200:
+          description: "successful operation"
+      x-tags:
+      - tag: "article"
+      x-operationId: "ReplaceArticle"
+    delete:
+      tags:
+      - "article"
+      summary: "Delete single article"
+      parameters:
+      - name: "articleId"
+        in: "path"
+        description: "The id of article to be fetched"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+      x-tags:
+      - tag: "article"
+      x-operationId: "DeleteArticle"
+      
+  /v1/content/{articleId}/{element}/{newValue}:
+    patch:
+      tags:
+      - "article"
+      summary: "Update element of article"
+      parameters:
+      - name: "articleId"
+        in: "path"
+        description: "The id of article that needs to be fetched."
+        required: true
+        type: "string"
+      - name: "element"
+        in: "path"
+        description: "The element of the article that needs to be updated."
+        required: true
+        type: "string"
+      - name: "newValue"
+        in: "path"
+        description: "The updated value of the element."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+      x-tags:
+      - tag: "article"
+      x-operationId: "UpdateArticle"
+definitions:
+  Article:
+    type: "object"
+    properties:
+      Id:
+        type: "string"
+      Date:
+        type: "string"
+      Location:
+        type: "string"
+      Author:
+        type: "string"
+      Photo:
+        type: "string"
+      Title:
+        type: "string"
+      Extract:
+        type: "string"
+      Body:
+        type: "string"
+# Added by API Auto Mocking Plugin
+host: virtserver.swaggerhub.com
+# basePath: /SirNexus/article-manager/1.0.0
+schemes:
+ - https
+# Added by API Auto Mocking Plugin
+basePath: /SirNexus/content-service/1.0.0
