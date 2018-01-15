@@ -1,0 +1,19 @@
+name: content-service
+resolver:
+  host: kube-dns.kube-system.svc.cluster.local
+  ttl: 3s
+root: /
+namespace: nginx-mra
+log_to_syslog : false
+syslog_error_log_location: "syslog:server=localhost:5544 debug"
+error_log_location: "/var/log/nginx/error_log debug"
+service_log_name: content_service_mra
+syslog_access_log_location: "syslog:server=localhost:5544,facility=local6,tag=content_service_mra,severity=info json"
+access_log_location: "/var/log/nginx/access_log combined"
+services:
+  album-manager:
+    server: nginx-mra.svc.cluster.local
+    service: service=_https._tcp.album-manager
+    expose_external: true
+    healthcheck: true
+    oss_port: 12001
