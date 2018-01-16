@@ -1,21 +1,3 @@
-{% macro location(name) -%}
-  location /{{ name }}/ {
-    proxy_pass https://{{ name }}/;
-    proxy_set_header Host {{ name }}.{{internal_domain_name}};
-
-    proxy_ssl_session_reuse     on;
-    proxy_ssl_protocols         TLSv1.2;
-    proxy_ssl_verify            off;
-    proxy_read_timeout          3600;
-    proxy_connect_timeout       3600;
-
-    proxy_http_version 1.1;
-    proxy_set_header Connection "";
-    proxy_set_header Accept-Encoding "";
-
-  }
-{%- endmacro %}
-
 {% if log_to_syslog %}
 error_log {{ syslog_error_log_location }};
 {% else %}
@@ -62,20 +44,8 @@ http {
         access_log {{ access_log_location }};
     {% endif %}
 
-  {% for name, service in services.iteritems() %}
-  upstream {{ name }} {
-    server        {% if service.server != None %}{{ service.server }}{% endif %};
-    zone backend  64k;
-    keepalive 		300;
-  }
-  {% endfor %}
-
   server {
     listen 80;
-
-    {% for name, service in services.iteritems() %}
-      {{ location(name) }}
-    {% endfor %}
 
     location / {
       return         301 https://$host$request_uri;
@@ -99,8 +69,6 @@ http {
 
     include default-location.conf;
 
-    {% for name, service in services.iteritems() if service.expose_external%}
-      {{ location(name) }}
-    {% endfor %}
+
   }
 }
