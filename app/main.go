@@ -2,6 +2,7 @@ package main
 
 import (
 	db "gopkg.in/gorethink/gorethink.v3"
+	"github.com/benbjohnson/clock"
 	"net/http"
 	"log"
 	"os"
@@ -31,10 +32,10 @@ func main() {
 	}
 
 	// Initialize environment variable to inject into handlers.
-	// IsTest set to false because this is a production environment (will remove in later release)
+	// Allows for testing
 	env := &Env{
 		Session: session,
-		IsTest: false,
+		Clock: clock.New(),
     }
 
 	// Create database called "content" for storing articles
