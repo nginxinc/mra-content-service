@@ -22,8 +22,6 @@ sleep 10
 APP=go
 APP_PID=`ps aux | grep "$APP" | grep -v grep`
 
-./insert.sh
-
 while [ -f "$NGINX_PID" ] &&  [ "$APP_PID" ];
 do
 	sleep 5;
