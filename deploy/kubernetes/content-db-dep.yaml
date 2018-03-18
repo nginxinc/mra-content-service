@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: content-db
+  namespace: nginx-mra
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx-mra
+        component: content-db
+    spec:
+      containers:
+      - name: content-db
+        image: docker.io/rethinkdb:2.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 28015
+          name: tcp
+        volumeMounts:
+          - name: rethinkdb-persistent-storage
+            mountPath: /data
+      volumes:
+        - name: rethinkdb-persistent-storage
+          persistentVolumeClaim:
+            claimName: rethinkdb-pv-claim
