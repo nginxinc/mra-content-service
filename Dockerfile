@@ -1,5 +1,8 @@
 FROM golang:1.8.3-jessie
 
+RUN useradd --create-home -s /bin/bash me
+USER me
+
 ARG CONTAINER_ENGINE_ARG
 ARG USE_NGINX_PLUS_ARG
 ARG USE_VAULT_ARG
@@ -21,6 +24,8 @@ CMD ["go-wrapper", "run"]
 
 COPY app /go/src/app/
 COPY nginx/ssl /etc/ssl/nginx/
+
+USER root
 
 # Get other files required for installation
 RUN go-wrapper download && \

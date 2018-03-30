@@ -1,6 +1,5 @@
 #!/bin/sh
 NGINX_PID="/var/run/nginx.pid"    # /   (root directory)
-APP="go run error.go handlers.go logger.go main.go router.go routes.go"
 
 NGINX_CONF="/etc/nginx/nginx.conf";
 
@@ -13,9 +12,9 @@ then
     echo fabric configuration set;
 fi
 
-$APP &
-
 nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
+
+su me -c '/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go'
 
 sleep 10
 #APP gets rendered as go
