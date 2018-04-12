@@ -1,7 +1,7 @@
 #!/bin/sh
 NGINX_PID="/var/run/nginx.pid"    # /   (root directory)
-
 NGINX_CONF="/etc/nginx/nginx.conf";
+APP="/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go"
 
 if [ ! -f .env ]; then
     touch .env
@@ -14,11 +14,10 @@ fi
 
 nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
 
-su me -c '/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go'
+su content-service -c '/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go'
 
 sleep 10
 #APP gets rendered as go
-APP=go
 APP_PID=`ps aux | grep "$APP" | grep -v grep`
 
 while [ -f "$NGINX_PID" ] &&  [ "$APP_PID" ];
