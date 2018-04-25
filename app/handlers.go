@@ -128,7 +128,7 @@ func GetArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var articleId string = vars["articleId"]
 
 	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body").Run(env.Session)
+	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -246,7 +246,7 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Unmarshal str variable into Post object
 	res := Post{}
 	json.Unmarshal([]byte(str), &res)
-	
+
 	// Make call to rethink database
 	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(env.Session)
 	if err != nil {

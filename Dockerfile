@@ -1,5 +1,7 @@
 FROM golang:1.8.3-jessie
 
+RUN useradd --create-home -s /bin/bash content-service
+
 ARG CONTAINER_ENGINE_ARG
 ARG USE_NGINX_PLUS_ARG
 ARG USE_VAULT_ARG
