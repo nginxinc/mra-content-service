@@ -7,12 +7,16 @@ if [ ! -f .env ]; then
     touch .env
 fi
 
-if [ "$NETWORK" = "fabric" ]
-then
-    echo fabric configuration set;
-fi
-
-nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
+case "$NETWORK" in
+    fabric)
+        echo 'Fabric configuration set'
+        nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
+        ;;
+    router-mesh)
+        ;;
+    *)
+        echo 'Network not supported'
+esac
 
 su content-service -c '/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go'
 
