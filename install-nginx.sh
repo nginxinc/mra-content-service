@@ -6,7 +6,7 @@ if [ "$USE_VAULT" = true ]; then
     unzip -d /usr/local/bin vault_0.5.2_linux_amd64.zip && \
     . /etc/ssl/nginx/vault_env.sh && \
     mkdir -p /etc/ssl/nginx && \
-    vault token-renew && \
+    vault token-renew
 # Download certificate and key from the the vault and copy to the build context
     vault read -field=value secret/ssl/certificate.pem > /etc/ssl/nginx/certificate.pem
     vault read -field=value secret/ssl/key.pem > /etc/ssl/nginx/key.pem
@@ -57,8 +57,6 @@ then
   # Install NGINX Plus
   apt-get update
   apt-get install -o Dpkg::Options::="--force-confold" -y nginx-plus
-
-  /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/fabric/nginx-plus-fabric.conf.j2 > /etc/nginx/nginx.conf
 else
     echo "Installing NGINX OSS"
 
