@@ -1,23 +1,5 @@
 #!/bin/bash
 
-wget -O /usr/local/sbin/generate_config -q https://s3-us-west-1.amazonaws.com/fabric-model/config-generator/generate_config
-chmod +x /usr/local/sbin/generate_config
-
-CONFIG_FILE=/etc/nginx/fabric_config.yaml
-
-echo -e "\033[32m -----"
-echo -e "\033[32m Building for ${CONTAINER_ENGINE}"
-echo -e "\033[32m -----\033[0m"
-
-case "$CONTAINER_ENGINE" in
-    kubernetes)
-        CONFIG_FILE=/etc/nginx/fabric_config_k8s.yaml
-        ;;
-    local)
-        CONFIG_FILE=/etc/nginx/fabric_config_local.yaml
-        ;;
-esac
-
 if [ "$USE_VAULT" = true ]; then
 # Install vault client
     wget -q https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_linux_amd64.zip && \
@@ -76,7 +58,7 @@ then
   apt-get update
   apt-get install -o Dpkg::Options::="--force-confold" -y nginx-plus
 
-  /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/nginx-plus-fabric.conf.j2 > /etc/nginx/nginx.conf
+  /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/fabric/nginx-plus-fabric.conf.j2 > /etc/nginx/nginx.conf
 else
     echo "Installing NGINX OSS"
 
@@ -85,6 +67,6 @@ else
 
     apt-get update
     apt-get install -o Dpkg::Options::="--force-confold" -y nginx
-
-    /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/nginx-fabric.conf.j2 > /etc/nginx/nginx.conf
 fi
+
+sh /etc/nginx/generate-nginx-config.sh
