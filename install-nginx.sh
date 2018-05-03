@@ -57,8 +57,6 @@ then
   # Install NGINX Plus
   apt-get update
   apt-get install -o Dpkg::Options::="--force-confold" -y nginx-plus
-
-  /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/fabric/nginx-plus-fabric.conf.j2 > /etc/nginx/nginx.conf
 else
     echo "Installing NGINX OSS"
 
