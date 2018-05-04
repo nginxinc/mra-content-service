@@ -1,20 +1,25 @@
 #!/bin/sh
 NGINX_PID="/var/run/nginx.pid"    # /   (root directory)
-NGINX_CONF="/etc/nginx/nginx.conf";
+NGINX_CONF="";
 APP="/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go"
 
 if [ ! -f .env ]; then
     touch .env
 fi
 
-if [ "$NETWORK" = "fabric" ]
-then
-    echo fabric configuration set;
-fi
+case "$NETWORK" in
+    fabric)
+        NGINX_CONF="/etc/nginx/fabric_nginx_$CONTAINER_ENGINE.conf"
+        echo 'Fabric configuration set'
+        nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
+        ;;
+    router-mesh)
+        ;;
+    *)
+        echo 'Network not supported'
+esac
 
-nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
-
-su content-service -c '/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go'
+su content-service -c "$APP"
 
 sleep 10
 #APP gets rendered as go
