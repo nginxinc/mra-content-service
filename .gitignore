@@ -44,5 +44,3 @@ tests/rethinkdb_data/log_file
 tests/rethinkdb_data/metadata
 /nginx/.DS_Store
 /.DS_Store
-/mra-content-service.iml
-/build
