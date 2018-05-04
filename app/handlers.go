@@ -34,6 +34,7 @@ type Post struct {
 	Title     string	`gorethink:"title,omitempty" json:"title"`
 	Extract   string	`gorethink:"extract,omitempty" json:"extract"`
 	Body      string	`gorethink:"body,omitempty" json:"body"`
+	Album_id  int   	`gorethink:"album_id,omitempty" json:"album_id"`
 }
 
 // Environment object used to inject database state into handlers
@@ -52,7 +53,7 @@ type Handler struct {
 // HandlerFunc type used to specify a template for handler functions to follow
 type HandlerFunc func(e *Env, w http.ResponseWriter, r *http.Request) error
 
-// ServeHTTP is called on each HTTP request. Species which function is
+// ServeHTTP is called on each HTTP request. Specifies which function is
 // called as well as how errors are handled and how logging is set
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := h.H(h.Env, w, r)
@@ -89,7 +90,7 @@ func GetAllArticles(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	// Call database and get all articles with fields:
 	// id, date, location, author, photo, title, and extract
-	resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(env.Session)
+	resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract", "album_id").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -128,7 +129,7 @@ func GetArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var articleId string = vars["articleId"]
 
 	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract").Run(env.Session)
+	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract", "album_id").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -166,6 +167,8 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	err := decoder.Decode(&newPost)
 	if err != nil {
 		panic(err)
+		log.Printf("HTTP %d - %s", err, err)
+		return StatusError{500, err}
 	}
 	defer r.Body.Close()
 

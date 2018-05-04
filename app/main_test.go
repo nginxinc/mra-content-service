@@ -29,7 +29,7 @@ var testEnv = &Env{
 // Tests NewArticle function
 func TestNewArticle(t *testing.T) {
 	// Specify values within Post object for replacing article
-	id := `{"location":"locationCreate", "author":"nameCreate", "photo":"photoCreate", "title":"titleCreate", "extract":"extractCreate", "body":"bodyCreate"}`
+	id := `{"location":"locationCreate", "author":"nameCreate", "photo":"photoCreate", "title":"titleCreate", "extract":"extractCreate", "body":"bodyCreate", "album_id": 1}`
 	post := Post{}
 	json.Unmarshal([]byte(id), &post)
 	post.Date = testEnv.Clock.Now()
@@ -75,12 +75,12 @@ func TestNewArticle(t *testing.T) {
 func TestGetAllArticles(t *testing.T) {
 	// Specify return variable for what should be returned by database
 	var expected = []interface{}{
-		map[string]interface{}{"author":"nameCreate","date":"2017-11-01T21:29:31.744Z","extract":"extractCreate","id":"cc60e237-fa52-4b9c-9d72-de2ae808f535","location":"locationCreate","photo":"photoCreate","title":"titleCreate"},
-		map[string]interface{}{"author":"nameCreate","date":"2017-11-01T21:47:42.201Z","extract":"extractCreate","id":"4b8073ba-61d5-4626-a51c-992ceb6cd5d1","location":"locationCreate","photo":"photoCreate","title":"titleCreate"},
+		map[string]interface{}{"author":"nameCreate","date":"2017-11-01T21:29:31.744Z","extract":"extractCreate","id":"cc60e237-fa52-4b9c-9d72-de2ae808f535","location":"locationCreate","photo":"photoCreate","title":"titleCreate","album_id": 1},
+		map[string]interface{}{"author":"nameCreate","date":"2017-11-01T21:47:42.201Z","extract":"extractCreate","id":"4b8073ba-61d5-4626-a51c-992ceb6cd5d1","location":"locationCreate","photo":"photoCreate","title":"titleCreate","album_id": 1},
 	}
 	
 	// Set database return values on reception of request to get all articles
-	mock.On(db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract")).Return(
+	mock.On(db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract", "album_id")).Return(
 		expected, nil)
 
 	// Create new HTTP request
@@ -113,12 +113,12 @@ func TestGetArticle(t *testing.T) {
 	// Specify test article ID for which article to delete in database
 	// Specify return variable for what should be returned by database
 	articleId := `cc60e237-fa52-4b9c-9d72-de2ae808f535`
-	expected := map[string]interface{}{"author":"nameCreate","date":"2017-11-01T21:29:31.744Z","extract":"extractCreate","id":"cc60e237-fa52-4b9c-9d72-de2ae808f535","location":"locationCreate","photo":"photoCreate","title":"titleCreate"}
+	expected := map[string]interface{}{"author":"nameCreate","date":"2017-11-01T21:29:31.744Z","extract":"extractCreate","id":"cc60e237-fa52-4b9c-9d72-de2ae808f535","location":"locationCreate","photo":"photoCreate","title":"titleCreate","album_id": 1}
 
 
 	// Set database return values on reception of request to get article
 	// with specified article ID
-	mock.On(db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract")).Return(
+	mock.On(db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract", "album_id")).Return(
 		expected, nil)
 
 	// Create new HTTP request
