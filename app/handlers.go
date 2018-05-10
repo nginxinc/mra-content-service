@@ -90,7 +90,8 @@ func GetAllArticles(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	// Call database and get all articles with fields:
 	// id, date, location, author, photo, title, and extract
-	resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract", "album_id").Run(env.Session)
+	resp, err = db.DB("content").Table("posts").WithFields(
+		"id", "date", "location", "author", "photo", "title", "extract", "album_id").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -129,7 +130,8 @@ func GetArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var articleId string = vars["articleId"]
 
 	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract", "album_id").Run(env.Session)
+	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id",
+		"date", "location", "author", "photo", "title", "body", "extract", "album_id").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -192,7 +194,7 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 // Updates elements within specified post
 // Parameters: articleID - specifies which article to update
 // @POST: new post object
-// @return: JSON object that specied what information was changed
+// @return: JSON object that specified what information was changed
 func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var resp db.WriteResponse
 
@@ -214,8 +216,8 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	newPost.Id = articleId
 	newPost.Date = env.Clock.Now()
 
-	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost).RunWrite(env.Session)
+	// Make call to rethink database and get changes back
+	resp, err = db.DB("content").Table("posts").Get(articleId, db.InsertOpts{ReturnChanges: true}).Replace(newPost).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -232,7 +234,7 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 // Parameters: articleID - specifies which article to update
 // 			   element - element within post to update
 // 			   newValue - new value of element
-// @return: JSON object that specied what information was changed
+// @return: JSON object that specified what information was changed
 func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var resp db.WriteResponse
 	var err error
@@ -250,8 +252,8 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	res := Post{}
 	json.Unmarshal([]byte(str), &res)
 
-	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(env.Session)
+	// Make call to rethink database and get changes back
+	resp, err = db.DB("content").Table("posts").Get(articleId, db.InsertOpts{ReturnChanges: true}).Update(res).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
