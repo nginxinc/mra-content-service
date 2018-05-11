@@ -11,17 +11,19 @@ pipeline {
 
         stage ('BuildImage') {
             steps {
-              echo "Building ${NG_BRANCH} Number ${env.BUILD_NUMBER} - home: ${env.HOME}"
-              whoami
-              pwd
-              go version
-              echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >>  /etc/apk/repositories
-              apk update
-              apk add docker
-              echo "tagging images with:registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}"
-              docker build -t registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${BUILD_NUMBER} -f docker/Dockerfile .
-              docker push registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${BUILD_NUMBER}
-              docker rmi $(docker images -f "dangling=true" -q) || true
+              sh '''
+                echo "Building ${NG_BRANCH} Number ${env.BUILD_NUMBER} - home: ${env.HOME}"
+                whoami
+                pwd
+                go version
+                echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >>  /etc/apk/repositories
+                apk update
+                apk add docker
+                echo "tagging images with:registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}"
+                docker build -t registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${BUILD_NUMBER} -f docker/Dockerfile .
+                docker push registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${BUILD_NUMBER}
+                docker rmi $(docker images -f "dangling=true" -q) || true
+              '''
         }
       }
 
