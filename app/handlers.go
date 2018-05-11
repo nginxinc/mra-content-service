@@ -9,6 +9,7 @@ import (
 	"log"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"strconv"
 )
 
 //
@@ -176,6 +177,12 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	newPost.Date = env.Clock.Now()
 
+	err = SetAlbumPublic(newPost.Album_id, true, r)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
+	}
+
 	// Make call to rethink database
 	resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
 	if err != nil {
@@ -217,11 +224,29 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	newPost.Date = env.Clock.Now()
 
 	// Make call to rethink database and get changes back
-	resp, err = db.DB("content").Table("posts").Get(articleId, db.InsertOpts{ReturnChanges: true}).Replace(newPost).RunWrite(env.Session)
+	resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost, db.ReplaceOpts{ReturnChanges: true}).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
 	}
+
+	// Coming through as interface{}
+	newAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].NewValue)
+	oldAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].OldValue)
+
+	if newAlbumID != oldAlbumID {
+		err = SetAlbumPublic(newAlbumID, true, r)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
+		err = SetAlbumPublic(oldAlbumID, false, r)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
+	}
+
 
 	// Print JSON response
 	printObj(w, resp)
@@ -253,10 +278,27 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	json.Unmarshal([]byte(str), &res)
 
 	// Make call to rethink database and get changes back
-	resp, err = db.DB("content").Table("posts").Get(articleId, db.InsertOpts{ReturnChanges: true}).Update(res).RunWrite(env.Session)
+	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res, db.UpdateOpts{ReturnChanges: true}).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
+	}
+
+	// Coming through as interface{}
+	newAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].NewValue)
+	oldAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].OldValue)
+
+	if newAlbumID != oldAlbumID {
+		err = SetAlbumPublic(newAlbumID, true, r)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
+		err = SetAlbumPublic(oldAlbumID, false, r)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
 	}
 
 	// Print JSON response
@@ -277,6 +319,13 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
 
+	albumInt, _ := strconv.Atoi(articleId)
+	err = SetAlbumPublic(albumInt, false, r)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
+	}
+
 	// Make call to rethink database
 	resp, err = db.DB("content").Table("posts").Get(articleId).Delete().Run(env.Session)
 	if err != nil {
@@ -296,4 +345,13 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 func printObj(w http.ResponseWriter, v interface{}) {
 	vBytes, _ := json.Marshal(v)
 	fmt.Fprint(w, string(vBytes))
+}
+
+func getPostDataFromRethinkChanges(data interface{}) int {
+	m := data.(map[string]interface{})
+	var albumID int
+	if albumFloat, ok := m["album_id"].(float64); ok {
+		albumID = int(albumFloat)
+	}
+	return albumID
 }
