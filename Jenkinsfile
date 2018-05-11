@@ -11,6 +11,7 @@ pipeline {
 
         stage ('BuildImage') {
             steps {
+              sh '''
                 echo "Building ${NG_BRANCH} Number ${env.BUILD_NUMBER} - home: ${env.HOME}"
                 whoami
                 pwd
@@ -22,6 +23,7 @@ pipeline {
                 docker build -t registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${BUILD_NUMBER} -f docker/Dockerfile .
                 docker push registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${BUILD_NUMBER}
                 docker rmi $(docker images -f "dangling=true" -q) || true
+              '''
         }
 
    }
