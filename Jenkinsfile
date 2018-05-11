@@ -11,6 +11,7 @@ pipeline {
 
         stage ('BuildImage') {
             steps {
+            // we need to escape the list of commands otherwise they will fail
               sh '''
                 echo "Building ${NG_BRANCH} Number ${env.BUILD_NUMBER} - home: ${env.HOME}"
                 whoami
