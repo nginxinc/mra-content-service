@@ -304,7 +304,7 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Print JSON response
 	printObj(w, resp)
 
-	return nil
+	return err
 }
 
 // Handler listening for DELETE at "/v1/content/{articleId}" URI
