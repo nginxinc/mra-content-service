@@ -46,7 +46,7 @@ func TestNewArticle(t *testing.T) {
 	// Method: POST
 	// Pattern: /v1/content/
 	// Body: New Post object
-	req, err := http.NewRequest("POST", "/v1/content", bytes.NewBufferString(id))
+	req, err := http.NewRequest(http.MethodPost, "/v1/content", bytes.NewBufferString(id))
 	if err != nil {
          t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestGetAllArticles(t *testing.T) {
 	// Method: GET
 	// Pattern: /v1/content/
 	// Body: None
-	req, err := http.NewRequest("GET", "/v1/content", nil)
+	req, err := http.NewRequest(http.MethodGet, "/v1/content", nil)
 	if err != nil {
          t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestGetArticle(t *testing.T) {
 	// Method: GET
 	// Pattern: /v1/content/{articleId}
 	// Body: None
-	req, err := http.NewRequest("GET", "/v1/content/" + articleId, nil)
+	req, err := http.NewRequest(http.MethodGet, "/v1/content/" + articleId, nil)
 	if err != nil {
          t.Fatal(err)
 	}
@@ -169,7 +169,7 @@ func TestReplaceArticle(t *testing.T) {
 	// Method: PUT
 	// Pattern: /v1/content/{articleId}
 	// Body: new Post object
-	req, err := http.NewRequest("PUT", "/v1/content/" + articleId, bytes.NewBufferString(id))
+	req, err := http.NewRequest(http.MethodPut, "/v1/content/" + articleId, bytes.NewBufferString(id))
 	if err != nil {
          t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestUpdateArticle(t *testing.T) {
 	// Method: PATCH
 	// Pattern: /v1/content/{articleId}/{element}/{newValue}
 	// Body: None
-	req, err := http.NewRequest("PATCH", "/v1/content/" + articleId + "/" + element + "/" + newValue, nil)
+	req, err := http.NewRequest(http.MethodPatch, "/v1/content/" + articleId + "/" + element + "/" + newValue, nil)
 	if err != nil {
          t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestDeleteArticle(t *testing.T) {
 	// Method: DELETE
 	// Pattern: /v1/content/{articleId}
 	// Body: None
-	req, err := http.NewRequest("DELETE", "/v1/content/" + articleId, nil)
+	req, err := http.NewRequest(http.MethodDelete, "/v1/content/" + articleId, nil)
 	if err != nil {
          t.Fatal(err)
 	}
