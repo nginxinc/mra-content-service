@@ -46,3 +46,4 @@ tests/rethinkdb_data/metadata
 /.DS_Store
 /mra-content-service.iml
 /build
+/build_linux
