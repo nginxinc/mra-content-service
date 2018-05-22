@@ -2,6 +2,7 @@ FROM golang:1.8.3-jessie
 
 RUN useradd --create-home -s /bin/bash content-service
 
+ARG CONTAINER_ENGINE_ARG
 ARG USE_NGINX_PLUS_ARG
 ARG USE_VAULT_ARG
 
@@ -11,7 +12,8 @@ ARG USE_VAULT_ARG
 # - mesos
 # - local
 ENV USE_NGINX_PLUS=${USE_NGINX_PLUS_ARG:-true} \
-    USE_VAULT=${USE_VAULT_ARG:-false}
+    USE_VAULT=${USE_VAULT_ARG:-false} \
+    CONTAINER_ENGINE=${CONTAINER_ENGINE_ARG:-kubernetes}
 
 RUN mkdir -p /go/src/app
 WORKDIR /go/src/app
