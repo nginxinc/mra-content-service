@@ -1,7 +1,7 @@
 #!/bin/sh
 NGINX_PID="/var/run/nginx.pid"    # /   (root directory)
 NGINX_CONF="";
-APP="/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go"
+APP="/usr/local/go/bin/go run main.go error.go handlers.go logger.go router.go routes.go album_manager.go"
 
 if [ ! -f .env ]; then
     touch .env
