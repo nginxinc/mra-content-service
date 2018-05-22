@@ -20,7 +20,7 @@ func SetAlbumPublic(id int, public bool, r *http.Request) error {
 
 	albumManagerHost := os.Getenv("ALBUM_MANAGER_HOST")
 	albumsPath := os.Getenv("ALBUMS_PATH")
-	url := albumManagerHost + albumsPath + strconv.Itoa(id) + "/public/" + strconv.FormatBool(public)
+	url := albumManagerHost + albumsPath + "/" + strconv.Itoa(id) + "/public/" + strconv.FormatBool(public)
 	userId := r.Header.Get("auth-id")
 
 	tr := &http.Transport{
