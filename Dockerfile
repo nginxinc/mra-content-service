@@ -42,8 +42,8 @@ RUN go-wrapper download && \
 # Install nginx and forward request logs to Docker log collector
 ADD install-nginx.sh /usr/local/bin/
 COPY nginx /etc/nginx/
-RUN /usr/local/bin/install-nginx.sh && \
-    ln -sf /dev/stdout /var/log/nginx/access_log && \
+RUN /usr/local/bin/install-nginx.sh
+RUN ln -sf /dev/stdout /var/log/nginx/access_log && \
     ln -sf /dev/stderr /var/log/nginx/error_log
 
 #RUN ./test.sh

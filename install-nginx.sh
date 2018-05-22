@@ -11,10 +11,10 @@ echo -e "\033[32m -----\033[0m"
 
 case "$CONTAINER_ENGINE" in
     kubernetes)
-        CONFIG_FILE=/etc/nginx/fabric_config_k8s.yaml
+        CONFIG_FILE=/etc/nginx/fabric/fabric_config_k8s.yaml
         ;;
     local)
-        CONFIG_FILE=/etc/nginx/fabric_config_local.yaml
+        CONFIG_FILE=/etc/nginx/fabric/fabric_config_local.yaml
         ;;
 esac
 
@@ -76,7 +76,7 @@ then
   apt-get update
   apt-get install -o Dpkg::Options::="--force-confold" -y nginx-plus
 
-  /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/nginx-plus-fabric.conf.j2 > /etc/nginx/nginx.conf
+  /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/fabric/fabric_nginx-plus.conf.j2 > /etc/nginx/nginx.conf
 else
     echo "Installing NGINX OSS"
 
@@ -86,5 +86,6 @@ else
     apt-get update
     apt-get install -o Dpkg::Options::="--force-confold" -y nginx
 
-    /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/nginx-fabric.conf.j2 > /etc/nginx/nginx.conf
+    /usr/local/sbin/generate_config -p ${CONFIG_FILE} -t /etc/nginx/fabric/fabric_nginx.conf.j2 > /etc/nginx/nginx.conf
 fi
+

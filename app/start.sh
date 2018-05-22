@@ -9,7 +9,7 @@ fi
 
 case "$NETWORK" in
     fabric)
-        NGINX_CONF="/etc/nginx/fabric_nginx_$CONTAINER_ENGINE.conf"
+        NGINX_CONF="/etc/nginx/nginx.conf"
         echo 'Fabric configuration set'
         nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
         ;;
