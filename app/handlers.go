@@ -9,7 +9,7 @@ import (
 	"log"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"strconv"
+	"github.com/davecgh/go-spew/spew"
 )
 
 //
@@ -44,6 +44,23 @@ type Env struct {
 	Session  db.QueryExecutor
 	Clock	 clock.Clock
 }
+
+type Changes struct {
+	Location string `json:"location"`
+	Title string `json:"title"`
+	Body string `json:"body"`
+	Date struct {
+		ReqlType string `json:"$reql_type$"`
+		EpochTime float64 `json:"epoch_time"`
+		Timezone string `json:"timezone"`
+	} `json:"date"`
+	Extract string `json:"extract"`
+	Photo string `json:"photo"`
+	AlbumID float64  `json:"album_id"`
+	Author string `json:"author"`
+	ID string `json:"id"`
+}
+
 
 // Handler object used for allowing handler functions to accept
 // an environment object
@@ -231,8 +248,8 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Coming through as interface{}
-	newAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].NewValue)
-	oldAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].OldValue)
+	newAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].NewValue)
+	oldAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].OldValue)
 
 	if newAlbumID != oldAlbumID {
 		err = SetAlbumPublic(newAlbumID, true, r)
@@ -285,8 +302,8 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Coming through as interface{}
-	newAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].NewValue)
-	oldAlbumID := getPostDataFromRethinkChanges(resp.Changes[0].OldValue)
+	newAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].NewValue)
+	oldAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].OldValue)
 
 	if newAlbumID != oldAlbumID {
 		err = SetAlbumPublic(newAlbumID, true, r)
@@ -319,19 +336,39 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
 
-	albumInt, _ := strconv.Atoi(articleId)
-	err = SetAlbumPublic(albumInt, false, r)
+	// Make call to rethink database
+	resp, err = db.DB("content").Table("posts").Get(articleId).Delete(db.DeleteOpts{ReturnChanges: true}).Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
 	}
 
-	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Delete().Run(env.Session)
+	result , _ := resp.NextResponse()
+	spew.Dump(result)
+
+	deRefedJson := (*json.RawMessage)(&result)
+	spew.Dump(result)
+
+	var jsonResult map[string]interface{}
+	err = json.Unmarshal(*deRefedJson, &jsonResult)
+	spew.Dump(jsonResult)
+	var changes map[string]interface{}
+	changesInterfaces := jsonResult["changes"].([]interface{})
+
+	fmt.Printf("Spewing changesInterfaces[0]\n")
+	spew.Dump(changesInterfaces[0])
+	changes = changesInterfaces[0].(map[string]interface{})
+	var change map[string]interface{}
+	change = changes["old_val"].(map[string]interface{})
+
+	albumID := change["album_id"].(float64)
+
+	err = SetAlbumPublic(int(albumID), false, r)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
 	}
+
 
 	defer resp.Close()
 
@@ -347,7 +384,7 @@ func printObj(w http.ResponseWriter, v interface{}) {
 	fmt.Fprint(w, string(vBytes))
 }
 
-func getPostDataFromRethinkChanges(data interface{}) int {
+func getAlbumIDFromReturnValues(data interface{}) int {
 	m := data.(map[string]interface{})
 	var albumID int
 	if albumFloat, ok := m["album_id"].(float64); ok {
