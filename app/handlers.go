@@ -230,22 +230,11 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Coming through as interface{}
-	newAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].NewValue)
-	oldAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].OldValue)
-
-	if newAlbumID != oldAlbumID {
-		err = SetAlbumPublic(newAlbumID, true, r)
-		if err != nil {
-			fmt.Print(err)
-			return StatusError{500, err}
-		}
-		err = SetAlbumPublic(oldAlbumID, false, r)
-		if err != nil {
-			fmt.Print(err)
-			return StatusError{500, err}
-		}
+	err = extractChangedAlbumID(resp, r)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
 	}
-
 
 	// Print JSON response
 	printObj(w, resp)
@@ -284,20 +273,10 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Coming through as interface{}
-	newAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].NewValue)
-	oldAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].OldValue)
-
-	if newAlbumID != oldAlbumID {
-		err = SetAlbumPublic(newAlbumID, true, r)
-		if err != nil {
-			fmt.Print(err)
-			return StatusError{500, err}
-		}
-		err = SetAlbumPublic(oldAlbumID, false, r)
-		if err != nil {
-			fmt.Print(err)
-			return StatusError{500, err}
-		}
+	err = extractChangedAlbumID(resp, r)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
 	}
 
 	// Print JSON response
@@ -327,31 +306,33 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	result , _ := resp.NextResponse()
 
-	// To get the albumID out of the response takes 5 levels of indirection
-	// result->deRefedJson->jsonResult->changes->change->albumID
-	// unfortunately, a Struct to extract the value didn't seem to work because of the
-	// anonymous []interface{} in the jsonResult
-	var deRefedJson *json.RawMessage
-	var jsonResult map[string]interface{}
-	var changes map[string]interface{}
-	var change map[string]interface{}
+	if result != nil {
+		// To get the albumID out of the response takes 5 levels of indirection
+		// result->deRefedJson->jsonResult->changes->change->albumID
+		// unfortunately, a Struct to extract the value didn't seem to work because of the
+		// anonymous []interface{} in the jsonResult
+		var deRefedJson *json.RawMessage
+		var jsonResult map[string]interface{}
+		var changes map[string]interface{}
+		var change map[string]interface{}
 
-	deRefedJson = (*json.RawMessage)(&result)
-	err = json.Unmarshal(*deRefedJson, &jsonResult)
-	if err != nil {
-		fmt.Print(err)
-		return StatusError{500, err}
-	}
+		deRefedJson = (*json.RawMessage)(&result)
+		err = json.Unmarshal(*deRefedJson, &jsonResult)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
 
-	changesInterfaces := jsonResult["changes"].([]interface{})
-	changes = changesInterfaces[0].(map[string]interface{})
-	change = changes["old_val"].(map[string]interface{})
-	albumID := change["album_id"].(float64)
+		changesInterfaces := jsonResult["changes"].([]interface{})
+		changes = changesInterfaces[0].(map[string]interface{})
+		change = changes["old_val"].(map[string]interface{})
+		albumID := change["album_id"].(float64)
 
-	err = SetAlbumPublic(int(albumID), false, r)
-	if err != nil {
-		fmt.Print(err)
-		return StatusError{500, err}
+		err = SetAlbumPublic(int(albumID), false, r)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
 	}
 
 	defer resp.Close()
@@ -366,6 +347,26 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 func printObj(w http.ResponseWriter, v interface{}) {
 	vBytes, _ := json.Marshal(v)
 	fmt.Fprint(w, string(vBytes))
+}
+
+func extractChangedAlbumID(resp db.WriteResponse, r *http.Request) error {
+	if (len(resp.Changes) > 0){
+		newAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].NewValue)
+		oldAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].OldValue)
+
+		var err error
+		if newAlbumID != oldAlbumID {
+			err = SetAlbumPublic(newAlbumID, true, r)
+			if err != nil {
+				return err
+			}
+			err = SetAlbumPublic(oldAlbumID, false, r)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func getAlbumIDFromReturnValues(data interface{}) int {

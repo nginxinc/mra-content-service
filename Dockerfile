@@ -46,7 +46,7 @@ RUN /usr/local/bin/install-nginx.sh
 RUN ln -sf /dev/stdout /var/log/nginx/access_log && \
     ln -sf /dev/stderr /var/log/nginx/error_log
 
-#RUN ./test.sh
+RUN ./test.sh
 
 EXPOSE 80 443 12002
 
