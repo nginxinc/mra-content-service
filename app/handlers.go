@@ -9,7 +9,6 @@ import (
 	"log"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/davecgh/go-spew/spew"
 )
 
 //
@@ -44,23 +43,6 @@ type Env struct {
 	Session  db.QueryExecutor
 	Clock	 clock.Clock
 }
-
-type Changes struct {
-	Location string `json:"location"`
-	Title string `json:"title"`
-	Body string `json:"body"`
-	Date struct {
-		ReqlType string `json:"$reql_type$"`
-		EpochTime float64 `json:"epoch_time"`
-		Timezone string `json:"timezone"`
-	} `json:"date"`
-	Extract string `json:"extract"`
-	Photo string `json:"photo"`
-	AlbumID float64  `json:"album_id"`
-	Author string `json:"author"`
-	ID string `json:"id"`
-}
-
 
 // Handler object used for allowing handler functions to accept
 // an environment object
@@ -344,23 +326,26 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	result , _ := resp.NextResponse()
-	spew.Dump(result)
 
-	deRefedJson := (*json.RawMessage)(&result)
-	spew.Dump(result)
-
+	// To get the albumID out of the response takes 5 levels of indirection
+	// result->deRefedJson->jsonResult->changes->change->albumID
+	// unfortunately, a Struct to extract the value didn't seem to work because of the
+	// anonymous []interface{} in the jsonResult
+	var deRefedJson *json.RawMessage
 	var jsonResult map[string]interface{}
-	err = json.Unmarshal(*deRefedJson, &jsonResult)
-	spew.Dump(jsonResult)
 	var changes map[string]interface{}
-	changesInterfaces := jsonResult["changes"].([]interface{})
-
-	fmt.Printf("Spewing changesInterfaces[0]\n")
-	spew.Dump(changesInterfaces[0])
-	changes = changesInterfaces[0].(map[string]interface{})
 	var change map[string]interface{}
-	change = changes["old_val"].(map[string]interface{})
 
+	deRefedJson = (*json.RawMessage)(&result)
+	err = json.Unmarshal(*deRefedJson, &jsonResult)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
+	}
+
+	changesInterfaces := jsonResult["changes"].([]interface{})
+	changes = changesInterfaces[0].(map[string]interface{})
+	change = changes["old_val"].(map[string]interface{})
 	albumID := change["album_id"].(float64)
 
 	err = SetAlbumPublic(int(albumID), false, r)
@@ -368,7 +353,6 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 		fmt.Print(err)
 		return StatusError{500, err}
 	}
-
 
 	defer resp.Close()
 
