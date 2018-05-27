@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
+	"net"
 )
 
 // 
@@ -32,8 +32,10 @@ func MockAlbumManager(t *testing.T)  {
 	handler := http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request){
 		fmt.Fprintf(resp, "hello, you've hit %s\n", req.URL.Path)
 	})
+	listener, _ := net.Listen("tcp", "127.0.0.1:8080")
 	mockAlbumManager := httptest.NewServer(handler)
-	mockAlbumManager.URL = os.Getenv("ALBUM_MANAGER_HOST")
+	mockAlbumManager.Listener = listener
+	//mockAlbumManager.URL = os.Getenv("ALBUM_MANAGER_HOST")
 	mockAlbumManager.Start()
 	defer mockAlbumManager.Close()
 
