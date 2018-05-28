@@ -48,7 +48,7 @@ RUN ln -sf /dev/stdout /var/log/nginx/access_log && \
 RUN go-wrapper download && \
     go-wrapper install
 
-#RUN ./test.sh
+RUN ./test.sh
 
 EXPOSE 80 443 12002
 

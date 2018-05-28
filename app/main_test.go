@@ -9,7 +9,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net"
+	"github.com/gorilla/mux"
+	"log"
 )
 
 // 
@@ -28,22 +29,11 @@ var testEnv = &Env{
 	Clock: clock.NewMock(),
 }
 
-func MockAlbumManager(t *testing.T)  {
-	handler := http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request){
-		fmt.Fprintf(resp, "hello, you've hit %s\n", req.URL.Path)
-	})
-	listener, _ := net.Listen("tcp", "127.0.0.1:8080")
-	mockAlbumManager := httptest.NewServer(handler)
-	mockAlbumManager.Listener = listener
-	//mockAlbumManager.URL = os.Getenv("ALBUM_MANAGER_HOST")
-	mockAlbumManager.Start()
-	defer mockAlbumManager.Close()
+var srv = MockAlbumManager()
 
-}
 
 // Tests NewArticle function
 func TestNewArticle(t *testing.T) {
-	// Specify values within Post object for replacing article
 	id := `{"location":"locationCreate", "author":"nameCreate", "photo":"photoCreate", "title":"titleCreate", "extract":"extractCreate", "body":"bodyCreate", "album_id": 1}`
 	post := Post{}
 	json.Unmarshal([]byte(id), &post)
@@ -331,4 +321,70 @@ func TestAlbumManager(t *testing.T) {
 	if err != nil {
 		t.Errorf("SetAlbumPublic failed with error %s", err, "It should have worked")
 	}
+}
+
+func MockAlbumManager() *http.Server {
+
+	testRouter := mux.NewRouter().StrictSlash(true)
+	var routes = Routes{
+		// Handler listening for GET at "/" URI
+		// Returns specified string
+		// @return: string "Welcome to the content service!"
+		Route {
+			"Welcome",
+			http.MethodGet,
+			"/",
+			Welcome,
+		},
+		// Handler listening for GET at "/albums/1/public/true" URI
+		// Returns specified string
+		// @return: string "Welcome to the content service!"
+		Route{
+			"albumManagerTestTrue",
+			http.MethodPatch,
+			"/albums/1/public/true",
+			func (env *Env, w http.ResponseWriter, r *http.Request) error {
+				fmt.Fprint(w, "Welcome to the album-manager!")
+				return nil
+			},
+		},
+		// Handler listening for GET at "/albums/1/public/false" URI
+		// Returns specified string
+		// @return: string "Welcome to the content service!"
+		Route{
+			"albumManagerTestFalse",
+			http.MethodPatch,
+			"/albums/1/public/false",
+			func (env *Env, w http.ResponseWriter, r *http.Request) error {
+				fmt.Fprint(w, "Welcome to the album-manager!")
+				return nil
+			},
+		},
+	}
+	for _, route := range routes {
+
+		// Associate each route with an HTTP endpoint
+		testRouter.
+			Methods(route.Method).
+			Path(route.Pattern).
+			Name(route.Name).
+			Handler(Handler{testEnv, route.Function})
+
+	}
+	// Listen for requests on port :1080 with testRouter and logging
+	fmt.Printf("Attempting to listen on port %s \n",  getEnv("ALBUM_MANAGER_LISTENER", "127.0.0.1:1080"))
+	srv := &http.Server{
+		Addr:  getEnv("ALBUM_MANAGER_LISTENER", "127.0.0.1:1080"),
+		Handler: testRouter,
+	}
+	var err error
+	go func() {
+		err = srv.ListenAndServe();
+	}()
+	if err != nil {
+		log.Println("Not serving")
+	} else {
+		log.Println("Listening and serving \n")
+	}
+	return srv;
 }
