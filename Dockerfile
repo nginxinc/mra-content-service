@@ -5,6 +5,7 @@ RUN useradd --create-home -s /bin/bash content-service
 ARG CONTAINER_ENGINE_ARG
 ARG USE_NGINX_PLUS_ARG
 ARG USE_VAULT_ARG
+ARG NETWORK_ARG
 
 # CONTAINER_ENGINE specifies the container engine to which the
 # containers will be deployed. Valid values are:
@@ -13,7 +14,8 @@ ARG USE_VAULT_ARG
 # - local
 ENV USE_NGINX_PLUS=${USE_NGINX_PLUS_ARG:-true} \
     USE_VAULT=${USE_VAULT_ARG:-false} \
-    CONTAINER_ENGINE=${CONTAINER_ENGINE_ARG:-kubernetes}
+    CONTAINER_ENGINE=${CONTAINER_ENGINE_ARG:-kubernetes} \
+    NETWORK=${NETWORK_ARG:-fabric}
 
 RUN mkdir -p /go/src/app
 WORKDIR /go/src/app
@@ -25,7 +27,9 @@ COPY app /go/src/app/
 COPY nginx/ssl /etc/ssl/nginx/
 
 # Get other files required for installation
-RUN apt-get update && apt-get install -y \
+RUN go-wrapper download && \
+    go-wrapper install && \
+    apt-get update && apt-get install -y \
     apt-transport-https \
     ca-certificates \
     curl \
@@ -40,13 +44,9 @@ RUN apt-get update && apt-get install -y \
 # Install nginx and forward request logs to Docker log collector
 ADD install-nginx.sh /usr/local/bin/
 COPY nginx /etc/nginx/
-RUN /usr/local/bin/install-nginx.sh
-RUN ln -sf /dev/stdout /var/log/nginx/access_log && \
+RUN /usr/local/bin/install-nginx.sh && \
+    ln -sf /dev/stdout /var/log/nginx/access_log && \
     ln -sf /dev/stderr /var/log/nginx/error_log
-
-# go-wrapper doesn't cache
-RUN go-wrapper download && \
-    go-wrapper install
 
 RUN ./test.sh
 
