@@ -34,6 +34,7 @@ type Post struct {
 	Title     string	`gorethink:"title,omitempty" json:"title"`
 	Extract   string	`gorethink:"extract,omitempty" json:"extract"`
 	Body      string	`gorethink:"body,omitempty" json:"body"`
+	Album_id  int   	`gorethink:"album_id,omitempty" json:"album_id"`
 }
 
 // Environment object used to inject database state into handlers
@@ -52,7 +53,7 @@ type Handler struct {
 // HandlerFunc type used to specify a template for handler functions to follow
 type HandlerFunc func(e *Env, w http.ResponseWriter, r *http.Request) error
 
-// ServeHTTP is called on each HTTP request. Species which function is
+// ServeHTTP is called on each HTTP request. Specifies which function is
 // called as well as how errors are handled and how logging is set
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := h.H(h.Env, w, r)
@@ -89,7 +90,8 @@ func GetAllArticles(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	// Call database and get all articles with fields:
 	// id, date, location, author, photo, title, and extract
-	resp, err = db.DB("content").Table("posts").WithFields("id", "date", "location", "author", "photo", "title", "extract").Run(env.Session)
+	resp, err = db.DB("content").Table("posts").WithFields(
+		"id", "date", "location", "author", "photo", "title", "extract", "album_id").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -128,7 +130,8 @@ func GetArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var articleId string = vars["articleId"]
 
 	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id", "date", "location", "author", "photo", "title", "body", "extract").Run(env.Session)
+	resp, err = db.DB("content").Table("posts").Get(articleId).Pluck("id",
+		"date", "location", "author", "photo", "title", "body", "extract", "album_id").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -166,10 +169,18 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	err := decoder.Decode(&newPost)
 	if err != nil {
 		panic(err)
+		log.Printf("HTTP %d - %s", err, err)
+		return StatusError{500, err}
 	}
 	defer r.Body.Close()
 
 	newPost.Date = env.Clock.Now()
+
+	err = SetAlbumPublic(newPost.Album_id, true, r)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
+	}
 
 	// Make call to rethink database
 	resp, err = db.DB("content").Table("posts").Insert(newPost).RunWrite(env.Session)
@@ -189,7 +200,7 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 // Updates elements within specified post
 // Parameters: articleID - specifies which article to update
 // @POST: new post object
-// @return: JSON object that specied what information was changed
+// @return: JSON object that specified what information was changed
 func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var resp db.WriteResponse
 
@@ -211,8 +222,15 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	newPost.Id = articleId
 	newPost.Date = env.Clock.Now()
 
-	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost).RunWrite(env.Session)
+	// Make call to rethink database and get changes back
+	resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost, db.ReplaceOpts{ReturnChanges: true}).RunWrite(env.Session)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
+	}
+
+	// Coming through as interface{}
+	err = extractChangedAlbumID(resp, r)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -229,7 +247,7 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 // Parameters: articleID - specifies which article to update
 // 			   element - element within post to update
 // 			   newValue - new value of element
-// @return: JSON object that specied what information was changed
+// @return: JSON object that specified what information was changed
 func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var resp db.WriteResponse
 	var err error
@@ -247,8 +265,15 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	res := Post{}
 	json.Unmarshal([]byte(str), &res)
 
-	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res).RunWrite(env.Session)
+	// Make call to rethink database and get changes back
+	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res, db.UpdateOpts{ReturnChanges: true}).RunWrite(env.Session)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
+	}
+
+	// Coming through as interface{}
+	err = extractChangedAlbumID(resp, r)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -257,7 +282,7 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Print JSON response
 	printObj(w, resp)
 
-	return nil
+	return err
 }
 
 // Handler listening for DELETE at "/v1/content/{articleId}" URI
@@ -273,10 +298,43 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var articleId string = vars["articleId"]
 
 	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Delete().Run(env.Session)
+	resp, err = db.DB("content").Table("posts").Get(articleId).Delete(db.DeleteOpts{ReturnChanges: true}).Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
+	}
+
+	result , _ := resp.NextResponse()
+
+	if result != nil {
+		// To get the albumID out of the response takes 5 levels of indirection
+		// result->deRefedJson->jsonResult->changes->change->albumID
+		// unfortunately, a Struct to extract the value didn't seem to work because of the
+		// anonymous []interface{} in the jsonResult
+		var deRefedJson *json.RawMessage
+		var jsonResult map[string]interface{}
+		var changes map[string]interface{}
+		var change map[string]interface{}
+		var albumID float64
+
+		deRefedJson = (*json.RawMessage)(&result)
+		err = json.Unmarshal(*deRefedJson, &jsonResult)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
+
+		changesInterfaces := jsonResult["changes"].([]interface{})
+		if changesInterfaces != nil && len(changesInterfaces) > 0 {
+			changes = changesInterfaces[0].(map[string]interface{})
+			change = changes["old_val"].(map[string]interface{})
+			albumID = change["album_id"].(float64)
+		}
+		err = SetAlbumPublic(int(albumID), false, r)
+		if err != nil {
+			fmt.Print(err)
+			return StatusError{500, err}
+		}
 	}
 
 	defer resp.Close()
@@ -291,4 +349,33 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 func printObj(w http.ResponseWriter, v interface{}) {
 	vBytes, _ := json.Marshal(v)
 	fmt.Fprint(w, string(vBytes))
+}
+
+func extractChangedAlbumID(resp db.WriteResponse, r *http.Request) error {
+	if resp.Changes != nil && len(resp.Changes) > 0 {
+		newAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].NewValue)
+		oldAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].OldValue)
+
+		var err error
+		if newAlbumID != oldAlbumID {
+			err = SetAlbumPublic(newAlbumID, true, r)
+			if err != nil {
+				return err
+			}
+			err = SetAlbumPublic(oldAlbumID, false, r)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func getAlbumIDFromReturnValues(data interface{}) int {
+	m := data.(map[string]interface{})
+	var albumID int
+	if albumFloat, ok := m["album_id"].(float64); ok {
+		albumID = int(albumFloat)
+	}
+	return albumID
 }
