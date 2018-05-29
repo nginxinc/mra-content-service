@@ -315,6 +315,7 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 		var jsonResult map[string]interface{}
 		var changes map[string]interface{}
 		var change map[string]interface{}
+		var albumID float64
 
 		deRefedJson = (*json.RawMessage)(&result)
 		err = json.Unmarshal(*deRefedJson, &jsonResult)
@@ -324,10 +325,11 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 		}
 
 		changesInterfaces := jsonResult["changes"].([]interface{})
-		changes = changesInterfaces[0].(map[string]interface{})
-		change = changes["old_val"].(map[string]interface{})
-		albumID := change["album_id"].(float64)
-
+		if changesInterfaces != nil && len(changesInterfaces) > 0 {
+			changes = changesInterfaces[0].(map[string]interface{})
+			change = changes["old_val"].(map[string]interface{})
+			albumID = change["album_id"].(float64)
+		}
 		err = SetAlbumPublic(int(albumID), false, r)
 		if err != nil {
 			fmt.Print(err)
@@ -350,7 +352,7 @@ func printObj(w http.ResponseWriter, v interface{}) {
 }
 
 func extractChangedAlbumID(resp db.WriteResponse, r *http.Request) error {
-	if (len(resp.Changes) > 0){
+	if resp.Changes != nil && len(resp.Changes) > 0 {
 		newAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].NewValue)
 		oldAlbumID := getAlbumIDFromReturnValues(resp.Changes[0].OldValue)
 
