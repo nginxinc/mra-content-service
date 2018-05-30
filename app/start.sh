@@ -13,8 +13,6 @@ sleep 10
 #APP gets rendered as go
 APP_PID=`ps aux | grep "$APP" | grep -v grep`
 
-./insert.sh
-
 case "$NETWORK" in
     fabric)
         NGINX_CONF="/etc/nginx/fabric_nginx_$CONTAINER_ENGINE.conf"
