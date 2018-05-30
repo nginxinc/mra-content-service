@@ -34,7 +34,8 @@ var srv = MockAlbumManager()
 
 // Tests NewArticle function
 func TestNewArticle(t *testing.T) {
-	id := `{"location":"locationCreate", "author":"nameCreate", "photo":"photoCreate", "title":"titleCreate", "extract":"extractCreate", "body":"bodyCreate", "album_id": 1}`
+	authID := "12345678-abcd-1234-abcd-1234567890ab"
+	id := `{"location":"locationCreate", "author":"nameCreate", "photo":"photoCreate", "title":"titleCreate", "extract":"extractCreate", "body":"bodyCreate", "album_id": 1, "auth_id": "12345678-abcd-1234-abcd-1234567890ab"}`
 	post := Post{}
 	json.Unmarshal([]byte(id), &post)
 	post.Date = testEnv.Clock.Now()
@@ -55,7 +56,7 @@ func TestNewArticle(t *testing.T) {
 	if err != nil {
          t.Fatal(err)
 	}
-	req.Header.Add("auth-id", "12345678-abcd-1234-abcd-1234567890ab")
+	req.Header.Add("auth-id", authID)
 
 	// Initilize new recorder for testing response of handler
 	rr := httptest.NewRecorder()
