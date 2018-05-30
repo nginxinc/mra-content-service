@@ -20,8 +20,6 @@ sleep 10
 APP=go
 APP_PID=`ps aux | grep "$APP" | grep -v grep`
 
-./insert.sh
-
 if [ "$NETWORK" = "fabric" ]
 then
     while [ -f "$NGINX_PID" ] &&  [ "$APP_PID" ];
