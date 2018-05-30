@@ -252,6 +252,8 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Read gorilla/mux variables for article ID to fetch from database
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
+	var authID string = r.Header.Get("Auth-ID")
+	filterParams :=  map[string]interface{}{"auth_id": authID, "id": articleId}
 
 	// Decode request body into Post object
 	var newPost Post
@@ -266,9 +268,10 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Set id of article to fetch
 	newPost.Id = articleId
 	newPost.Date = env.Clock.Now()
+	newPost.AuthID = authID
 
 	// Make call to rethink database and get changes back
-	resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost, db.ReplaceOpts{ReturnChanges: true}).RunWrite(env.Session)
+	resp, err = db.DB("content").Table("posts").Filter(filterParams).Replace(newPost, db.ReplaceOpts{ReturnChanges: true}).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -302,6 +305,8 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var articleId string = vars["articleId"]
 	var element string = vars["element"]
 	var newValue string = vars["newValue"]
+	var authID string = r.Header.Get("Auth-ID")
+	filterParams :=  map[string]interface{}{"auth_id": authID, "id": articleId}
 
 	// Set syntax for new/updated element within database
 	str := `{"` + element +`": "` + newValue + `"}`
@@ -311,7 +316,7 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	json.Unmarshal([]byte(str), &res)
 
 	// Make call to rethink database and get changes back
-	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res, db.UpdateOpts{ReturnChanges: true}).RunWrite(env.Session)
+	resp, err = db.DB("content").Table("posts").Filter(filterParams).Update(res, db.UpdateOpts{ReturnChanges: true}).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -341,9 +346,12 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Read gorilla/mux variables for article ID and element + value to update database
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
+	var authID string = r.Header.Get("Auth-ID")
+	filterParams :=  map[string]interface{}{"auth_id": authID, "id": articleId}
+
 
 	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Delete(db.DeleteOpts{ReturnChanges: true}).Run(env.Session)
+	resp, err = db.DB("content").Table("posts").Filter(filterParams).Delete(db.DeleteOpts{ReturnChanges: true}).Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
