@@ -26,15 +26,16 @@ type Photo struct {
 
 // Struct object for storing post information within RethinkDB
 type Post struct {
-	Id		  string	`gorethink:"id,omitempty"`
-	Date      time.Time	`gorethink:"date" json:"date"`
-	Location  string	`gorethink:"location,omitempty" json:"location"`
-	Author    string	`gorethink:"author,omitempty" json:"author"`
-	Photo     string	`gorethink:"photo,omitempty" json:"photo"`
-	Title     string	`gorethink:"title,omitempty" json:"title"`
-	Extract   string	`gorethink:"extract,omitempty" json:"extract"`
-	Body      string	`gorethink:"body,omitempty" json:"body"`
-	Album_id  int   	`gorethink:"album_id,omitempty" json:"album_id"`
+	Id       string    `gorethink:"id,omitempty"`
+	Date     time.Time `gorethink:"date" json:"date"`
+	Location string    `gorethink:"location,omitempty" json:"location"`
+	Author   string    `gorethink:"author,omitempty" json:"author"`
+	Photo    string    `gorethink:"photo,omitempty" json:"photo"`
+	Title    string    `gorethink:"title,omitempty" json:"title"`
+	Extract  string    `gorethink:"extract,omitempty" json:"extract"`
+	Body     string    `gorethink:"body,omitempty" json:"body"`
+	AlbumID  int       `gorethink:"album_id,omitempty" json:"album_id"`
+	AuthID   string    `gorethink:"auth_id,index,omitempty" json:"auth_id"`
 }
 
 // Environment object used to inject database state into handlers
@@ -92,6 +93,48 @@ func GetAllArticles(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// id, date, location, author, photo, title, and extract
 	resp, err = db.DB("content").Table("posts").WithFields(
 		"id", "date", "location", "author", "photo", "title", "extract", "album_id").Run(env.Session)
+	if err != nil {
+		fmt.Print(err)
+		return StatusError{500, err}
+	}
+	defer resp.Close()
+
+	var posts []interface{}
+	// Map all posts into an array of interfaces for printing to user
+	err = resp.All(&posts)
+	if err != nil {
+		fmt.Printf("Error scanning database result: %s", err)
+		return StatusError{500, err}
+	}
+
+	// Write header to specify returning a JSON object
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(posts); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%d posts", len(posts))
+	return nil
+}
+
+// Handler listening for GET at "/v1/content/author/{authID}" URI
+// Get array of all articles in database
+// @return: array of JSON objects, each element with single post information
+func GetAuthorArticles(env *Env, w http.ResponseWriter, r *http.Request) error {
+	var resp *db.Cursor
+	var err error
+
+	// Read gorilla/mux variables for article ID to fetch from database
+	vars := mux.Vars(r)
+	var authID string = vars["authID"]
+	auth_id :=  map[string]interface{}{"auth_id": authID}
+
+
+	// Call database and get all articles with fields:
+	// id, date, location, author, photo, title, and extract
+	resp, err = db.DB("content").Table("posts").Filter(auth_id).WithFields(
+		"id", "date", "location", "author", "photo", "title", "extract", "album_id", "auth_id").Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -175,8 +218,10 @@ func NewArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 
 	newPost.Date = env.Clock.Now()
+	var authID string = r.Header.Get("Auth-ID")
+	newPost.AuthID = authID
 
-	err = SetAlbumPublic(newPost.Album_id, true, r)
+	err = SetAlbumPublic(newPost.AlbumID, true, r)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -207,6 +252,8 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Read gorilla/mux variables for article ID to fetch from database
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
+	var authID string = r.Header.Get("Auth-ID")
+	filterParams :=  map[string]interface{}{"auth_id": authID, "id": articleId}
 
 	// Decode request body into Post object
 	var newPost Post
@@ -221,9 +268,10 @@ func ReplaceArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Set id of article to fetch
 	newPost.Id = articleId
 	newPost.Date = env.Clock.Now()
+	newPost.AuthID = authID
 
 	// Make call to rethink database and get changes back
-	resp, err = db.DB("content").Table("posts").Get(articleId).Replace(newPost, db.ReplaceOpts{ReturnChanges: true}).RunWrite(env.Session)
+	resp, err = db.DB("content").Table("posts").Filter(filterParams).Replace(newPost, db.ReplaceOpts{ReturnChanges: true}).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -257,6 +305,8 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	var articleId string = vars["articleId"]
 	var element string = vars["element"]
 	var newValue string = vars["newValue"]
+	var authID string = r.Header.Get("Auth-ID")
+	filterParams :=  map[string]interface{}{"auth_id": authID, "id": articleId}
 
 	// Set syntax for new/updated element within database
 	str := `{"` + element +`": "` + newValue + `"}`
@@ -266,7 +316,7 @@ func UpdateArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	json.Unmarshal([]byte(str), &res)
 
 	// Make call to rethink database and get changes back
-	resp, err = db.DB("content").Table("posts").Get(articleId).Update(res, db.UpdateOpts{ReturnChanges: true}).RunWrite(env.Session)
+	resp, err = db.DB("content").Table("posts").Filter(filterParams).Update(res, db.UpdateOpts{ReturnChanges: true}).RunWrite(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
@@ -296,9 +346,12 @@ func DeleteArticle(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// Read gorilla/mux variables for article ID and element + value to update database
 	vars := mux.Vars(r)
 	var articleId string = vars["articleId"]
+	var authID string = r.Header.Get("Auth-ID")
+	filterParams :=  map[string]interface{}{"auth_id": authID, "id": articleId}
+
 
 	// Make call to rethink database
-	resp, err = db.DB("content").Table("posts").Get(articleId).Delete(db.DeleteOpts{ReturnChanges: true}).Run(env.Session)
+	resp, err = db.DB("content").Table("posts").Filter(filterParams).Delete(db.DeleteOpts{ReturnChanges: true}).Run(env.Session)
 	if err != nil {
 		fmt.Print(err)
 		return StatusError{500, err}
