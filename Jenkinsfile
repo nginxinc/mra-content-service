@@ -18,9 +18,9 @@ pipeline {
               echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >>  /etc/apk/repositories
               apk update
               apk add docker
-              echo "tagging images with:registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}"
-              docker build -t registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${env.BUILD_NUMBER} .
-              docker push registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${env.BUILD_NUMBER}
+              echo "tagging images with:registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/$NG_BRANCH"
+              docker build -t registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/$NG_BRANCH/mra-content-service:$BUILD_NUMBER .
+              docker push registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/$NG_BRANCH/mra-content-service:$BUILD_NUMBER
               docker rmi $(docker images -f "dangling=true" -q) || true
             '''
           }
