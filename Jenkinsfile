@@ -13,7 +13,7 @@ pipeline {
           steps {
           // this is the list of commands that will be run in the agent
             sh '''
-              echo "Building ${NG_BRANCH} Number ${env.BUILD_NUMBER} - home: ${env.HOME}"
+              echo "Building $NG_BRANCH Number $BUILD_NUMBER - home: $HOME"
               go version
               echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >>  /etc/apk/repositories
               apk update
