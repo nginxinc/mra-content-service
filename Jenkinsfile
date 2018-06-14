@@ -26,7 +26,7 @@ pipeline {
           }
       }
       stage ('DeployContainerToK8s') {
-        agent { docker { image 'lachlanevenson/k8s-kubectl:v1.9.8' } }
+        agent { docker { image 'roffe/kubectl:v1.9.7' } }
         steps {
           sh '''
             echo `kubectl version`
