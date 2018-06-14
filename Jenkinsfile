@@ -1,30 +1,37 @@
 #!groovy
 pipeline {
 // agent needs to build go, so start with golang:1.10-alpine
-    agent { docker { image 'golang:1.10-alpine' }  }
+    agent none
     environment {
 // could be useful for now
         NG_BRANCH = env.BRANCH_NAME.toLowerCase()
     }
     options { disableConcurrentBuilds() }
     stages {
-
         stage ('BuildImage') {
-            steps {
-            // this is the list of commands that will be run in the agent
-              sh '''
-                echo "Building ${NG_BRANCH} Number ${env.BUILD_NUMBER} - home: ${env.HOME}"
-                whoami
-                pwd
-                go version
-                echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >>  /etc/apk/repositories
-                apk update
-                apk add docker
-                echo "tagging images with:registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}"
-                docker build -t registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${env.BUILD_NUMBER} -f docker/Dockerfile .
-                docker push registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${env.BUILD_NUMBER}
-                docker rmi $(docker images -f "dangling=true" -q) || true
-              '''
+          agent { docker { image 'golang:1.10-alpine' }  }
+          steps {
+          // this is the list of commands that will be run in the agent
+            sh '''
+              echo "Building ${NG_BRANCH} Number ${env.BUILD_NUMBER} - home: ${env.HOME}"
+              go version
+              echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >>  /etc/apk/repositories
+              apk update
+              apk add docker
+              echo "tagging images with:registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}"
+              docker build -t registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${env.BUILD_NUMBER} .
+              docker push registry.ctrl.nginx.com/mra/ngrefarch/mra-content-service/${NG_BRANCH}/mra-content-service:${env.BUILD_NUMBER}
+              docker rmi $(docker images -f "dangling=true" -q) || true
+            '''
+          }
+      }
+      stage ('DeployContainerToK8s') {
+        agent { docker { image 'lachlanevenson:k8s-kubectl:v1.9.8' } }
+        steps {
+          sh '''
+            echo `kubectl version`
+            echo done
+          '''
         }
       }
 
