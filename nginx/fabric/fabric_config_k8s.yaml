@@ -12,8 +12,8 @@ syslog_access_log_location: "syslog:server=localhost:5544,facility=local6,tag=co
 access_log_location: "/var/log/nginx/access_log combined"
 services:
   album-manager:
-    server: svc.cluster.local:443
+    server: svc.cluster.local
     service: service=_https._tcp.album-manager
     expose_external: true
     healthcheck: true
-    oss_port: 12001
+    port: 443
