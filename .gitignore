@@ -42,3 +42,8 @@ tests/rethinkdb_data/155aafb5-c9c8-48b8-90e1-a074faa6909c
 tests/rethinkdb_data/log_file
 
 tests/rethinkdb_data/metadata
+/nginx/.DS_Store
+/.DS_Store
+/mra-content-service.iml
+/build
+/build_linux

@@ -2,4 +2,4 @@
 
 echo "Running Tests"
 
-go test -v ''
+ALBUM_MANAGER_LISTENER=127.0.0.1:1080 ALBUM_MANAGER_HOST=http://$ALBUM_MANAGER_LISTENER ALBUMS_PATH=/albums go test -v ''

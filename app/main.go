@@ -2,6 +2,7 @@ package main
 
 import (
 	db "gopkg.in/gorethink/gorethink.v3"
+	"github.com/benbjohnson/clock"
 	"net/http"
 	"log"
 	"os"
@@ -31,10 +32,10 @@ func main() {
 	}
 
 	// Initialize environment variable to inject into handlers.
-	// IsTest set to false because this is a production environment (will remove in later release)
+	// Allows for testing
 	env := &Env{
 		Session: session,
-		IsTest: false,
+		Clock: clock.New(),
     }
 
 	// Create database called "content" for storing articles
@@ -43,7 +44,7 @@ func main() {
 		fmt.Print(err)
 	}
 
-	fmt.Printf("%d DB created", resp.DBsCreated)
+	fmt.Printf("%d DB created\n", resp.DBsCreated)
 
 	// Create table called "posts" within database
 	response, err := db.DB("content").TableCreate("posts").RunWrite(env.Session)
@@ -51,12 +52,21 @@ func main() {
 		log.Print("Error creating table: " + err.Error())
 	}
 
-	fmt.Printf("%d table created", response.TablesCreated)
+	fmt.Printf("%d table created\n", response.TablesCreated)
 
 	// Initialize router for mapping functions within handlers.go
 	// to HTTP endpoints at specified URIs within routes.go
 	router := NewRouter(env)
 
 	// Listen for requests on port :8080 with router and logging
-	log.Fatal(http.ListenAndServe(":8080", router))
+	fmt.Printf("Attempting to listen on port %s \n",  getEnv("CONTENT_LISTEN_PORT", ":8080"))
+	log.Fatal(http.ListenAndServe( getEnv("CONTENT_LISTEN_PORT", ":8080"), router))
+
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }

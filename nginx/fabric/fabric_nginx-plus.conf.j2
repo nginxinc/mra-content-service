@@ -65,14 +65,19 @@ http {
         access_log {{ access_log_location }};
     {% endif %}
 
-  {% for name, service in services.iteritems() %}
-  upstream {{ name }} {
-    server        {% if service.server == None %}{{ name }}{% else %}{{ service.server }}{% endif %} {{ service.service }} resolve;
+    {% for name, service in services.iteritems() %}
+    upstream {{ name }} {
+  {% if namespace != None and namespace != '' %}
+    server        {{ namespace }}.{% if service.server == None or service.server == '' %}{{ name }}{% else %}{{ service.server }}{% endif %} {{ service.service }} resolve;
+  {% else %}
+    server        {% if namespace != None and namespace != '' %}{{ namespace }}.{% endif %}{% if service.server == None or service.server == '' %}{{ name }}{% else %}{{ service.server }}{% endif %}{% if service.port %}:{{ service.port }}{% endif %} {{ service.service }} resolve;
+  {% endif %}
     zone backend  64k;
     least_time 		last_byte;
     keepalive 		300;
-  }
-  {% endfor %}
+    }
+    {% endfor %}
+
 
   server {
     listen 80;
@@ -103,10 +108,6 @@ http {
     root {{ root }};
 
     include default-location.conf;
-
-    {% for name, service in services.iteritems() if service.expose_external%}
-      {{ location(name, service) }}
-    {% endfor %}
 
     location = /status.html {
       root /usr/share/nginx/html/;

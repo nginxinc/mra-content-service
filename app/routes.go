@@ -51,6 +51,16 @@ var routes = Routes {
 		"/v1/content/{articleId}",
 		GetArticle,
 	},
+// Handler listening for GET at "/v1/content/author/{authID}" URI
+// Get specified article
+// Parameters: articleID - specifies which article to get
+// @return: single JSON object with post information
+	Route {
+		"GetAuthorArticles",
+		"GET",
+		"/v1/content/author/{authID}",
+		GetAuthorArticles,
+	},
 // Handler listening for POST at "/v1/content" URI
 // Creates new article based on JSON object in POST
 // @POST: new post object

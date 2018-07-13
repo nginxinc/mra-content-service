@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: content-db
+  labels:
+    app: nginx-mra
+    component: content-db-svc
+  namespace: nginx-mra
+spec:
+  type: NodePort
+  ports:
+  - port: 28015
+    targetPort: 28015
+    name: tcp
+  selector:
+    app: nginx-mra
+    component: content-db

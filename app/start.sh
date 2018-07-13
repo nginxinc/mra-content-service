@@ -1,31 +1,47 @@
 #!/bin/sh
 NGINX_PID="/var/run/nginx.pid"    # /   (root directory)
-APP="go run error.go handlers.go logger.go main.go router.go routes.go"
-
-NGINX_CONF="/etc/nginx/nginx.conf";
+NGINX_CONF="";
+APP="/usr/local/go/bin/go run main.go error.go handlers.go router.go routes.go album_manager.go"
 
 if [ ! -f .env ]; then
     touch .env
 fi
 
-if [ "$NETWORK" = "fabric" ]
-then
-    echo fabric configuration set;
-fi
-
-$APP &
-
-nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
+su content-service -c "$APP" &
 
 sleep 10
 #APP gets rendered as go
-APP=go
 APP_PID=`ps aux | grep "$APP" | grep -v grep`
 
-./insert.sh
+case "$NETWORK" in
+    fabric)
+        NGINX_CONF="/etc/nginx/fabric_nginx_$CONTAINER_ENGINE.conf"
+        echo 'Fabric configuration set'
+        nginx -c "$NGINX_CONF" -g "pid $NGINX_PID;" &
 
-while [ -f "$NGINX_PID" ] &&  [ "$APP_PID" ];
-do
-	sleep 5;
-	APP_PID=`ps aux | grep "$APP" | grep -v grep`;
-done
+        sleep 10
+
+        while [ -f "$NGINX_PID" ] &&  [ "$APP_PID" ];
+        do
+	        sleep 5;
+	        APP_PID=`ps aux | grep "$APP" | grep -v grep`;
+        done
+        ;;
+    router-mesh)
+        while [ "$APP_PID" ];
+        do
+	        sleep 5;
+	        APP_PID=`ps aux | grep "$APP" | grep -v grep`;
+        done
+        ;;
+    proxy)
+        while [ "$APP_PID" ];
+        do
+	        sleep 5;
+	        APP_PID=`ps aux | grep "$APP" | grep -v grep`;
+        done
+        ;;
+    *)
+        echo 'Network not supported'
+        exit 1
+esac
