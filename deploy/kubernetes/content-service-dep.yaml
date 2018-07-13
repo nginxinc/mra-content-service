@@ -1,0 +1,37 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: content-service
+  namespace: nginx-mra
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx-mra
+        component: content-service
+    spec:
+      imagePullSecrets:
+        - name: <DOCKER_SECRET>
+      containers:
+      - name: content-service
+        image: <IMAGE_REPO_AND_TAG>
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 443
+          name: https
+        env:
+          - name: RETHINKDB_URL
+            value: content-db.nginx-mra:28015
+        livenessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /status
+            port: 443
+            httpHeaders:
+              - name: Host
+                value: <K8S_HOST_NAME>
+          periodSeconds: 20
+          timeoutSeconds: 20
+          successThreshold: 1
+          failureThreshold: 10

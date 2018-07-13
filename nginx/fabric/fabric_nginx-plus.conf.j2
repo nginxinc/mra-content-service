@@ -1,3 +1,24 @@
+{% macro location(name, service) -%}
+  location /{{ name }}/ {
+    proxy_pass https://{{ name }}/;
+    proxy_set_header Host {{ name }};
+
+    proxy_ssl_session_reuse     on;
+    proxy_ssl_protocols         TLSv1.2;
+    proxy_ssl_verify            off;
+    proxy_read_timeout          3600;
+    proxy_connect_timeout       3600;
+
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Accept-Encoding "";
+
+    {% if service.healthcheck %}
+      health_check interval=2s fails=1 uri={{ service.healthcheck_uri or "/" }};
+    {% endif %}
+  }
+{%- endmacro %}
+
 {% if log_to_syslog %}
 error_log {{ syslog_error_log_location }};
 {% else %}
@@ -44,8 +65,26 @@ http {
         access_log {{ access_log_location }};
     {% endif %}
 
+    {% for name, service in services.iteritems() %}
+    upstream {{ name }} {
+  {% if namespace != None and namespace != '' %}
+    server        {{ namespace }}.{% if service.server == None or service.server == '' %}{{ name }}{% else %}{{ service.server }}{% endif %} {{ service.service }} resolve;
+  {% else %}
+    server        {% if namespace != None and namespace != '' %}{{ namespace }}.{% endif %}{% if service.server == None or service.server == '' %}{{ name }}{% else %}{{ service.server }}{% endif %}{% if service.port %}:{{ service.port }}{% endif %} {{ service.service }} resolve;
+  {% endif %}
+    zone backend  64k;
+    least_time 		last_byte;
+    keepalive 		300;
+    }
+    {% endfor %}
+
+
   server {
     listen 80;
+
+    {% for name, service in services.iteritems() %}
+      {{ location(name, service) }}
+    {% endfor %}
 
     location / {
       return         301 https://$host$request_uri;
