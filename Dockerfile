@@ -26,6 +26,8 @@ CMD ["go-wrapper", "run"]
 COPY app /go/src/app/
 COPY nginx/ssl /etc/ssl/nginx/
 
+# Fix jessie repo
+RUN printf "deb http://archive.debian.org/debian/ jessie main\ndeb-src http://archive.debian.org/debian/ jessie main\ndeb http://security.debian.org jessie/updates main\ndeb-src http://security.debian.org jessie/updates main" > /etc/apt/sources.list
 # Get other files required for installation
 RUN go-wrapper download && \
     go-wrapper install && \
